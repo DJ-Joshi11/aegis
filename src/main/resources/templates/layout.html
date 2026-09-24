@@ -1,0 +1,28 @@
+<!--
+  Shared Thymeleaf fragments: nav + footer.
+  OWNERSHIP: shared file — only edit together as a team, never inside a
+  single feature branch. Each page includes these via th:replace, e.g.:
+    <div th:replace="~{layout :: nav}"></div>
+    ... your page content ...
+    <div th:replace="~{layout :: footer}"></div>
+-->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<header th:fragment="nav" class="aegis-nav">
+    <a class="aegis-brand" th:href="@{/}">AEGIS</a>
+    <nav>
+        <a th:href="@{/}">Dashboard</a>
+        <a th:href="@{/ingestion/decision-feed}">Decision Feed</a>
+        <a th:href="@{/detection/flags}">Flags &amp; Compliance</a>
+        <a th:href="@{/payout/payouts}">Payouts &amp; Pricing</a>
+    </nav>
+</header>
+
+<footer th:fragment="footer" class="aegis-footer">
+    <span>AEGIS &mdash; AI Exposure Governance &amp; Insurance Shield</span>
+</footer>
+
+</body>
+</html>

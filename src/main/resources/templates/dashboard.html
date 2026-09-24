@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AEGIS — Dashboard</title>
+    <link rel="stylesheet" th:href="@{/css/aegis.css}"/>
+</head>
+<body>
+<div th:replace="~{layout :: nav}"></div>
+
+<main class="aegis-content">
+    <h1>Dashboard</h1>
+    <p>
+        DAY-0 PLACEHOLDER — owned by Person C (com.aegis.payout / DashboardController).
+        This page should end up showing the whole pipeline at a glance: recent
+        decisions, how many were flagged, payouts triggered, and the current
+        pricing signal. See src/main/java/com/aegis/payout/README.md.
+    </p>
+</main>
+
+<div th:replace="~{layout :: footer}"></div>
+</body>
+</html>
