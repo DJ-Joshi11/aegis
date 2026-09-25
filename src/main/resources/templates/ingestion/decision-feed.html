@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AEGIS — Decision Feed</title>
+    <link rel="stylesheet" th:href="@{/css/aegis.css}"/>
+    <style>
+        /* Page-scoped styling only — shared aegis.css stays untouched. */
+        .feed-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .feed-status {
+            font-size: 0.85rem;
+            color: #5a5f7a;
+        }
+        .feed-status .dot {
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: #34c77b;
+            margin-right: 0.4rem;
+        }
+        .outcome-pill {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: #eef0fa;
+            color: #3d4270;
+        }
+        .decision-type {
+            font-size: 0.78rem;
+            letter-spacing: 0.03em;
+            color: #5a5f7a;
+        }
+        .reasoning-cell {
+            max-width: 340px;
+            color: #4a4f6a;
+            font-size: 0.88rem;
+        }
+        .empty-row td {
+            text-align: center;
+            color: #8a8fa3;
+            padding: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{layout :: nav}"></div>
+
+<main class="aegis-content">
+    <div class="feed-header">
+        <h1>Decision Feed</h1>
+        <span class="feed-status" id="feed-status"><span class="dot"></span>Live — updates every few seconds</span>
+    </div>
+    <p>
+        Every AI-agent decision AEGIS has ingested so far, newest first. Mocked
+        via <code>MockDecisionGenerator</code> in the same shape a real
+        Guidewire Qusar agent's decision log would take, since we don't have
+        sandbox access yet — see the project README's "How we're using Qusar"
+        section.
+    </p>
+
+    <table id="decision-table">
+        <thead>
+        <tr>
+            <th>Decision ID</th>
+            <th>Agent</th>
+            <th>Type</th>
+            <th>Outcome</th>
+            <th>Jurisdiction</th>
+            <th>Time</th>
+            <th>Reasoning trail</th>
+        </tr>
+        </thead>
+        <tbody id="decision-table-body">
+        <tr th:if="${#lists.isEmpty(decisions)}" class="empty-row">
+            <td colspan="7">No decisions ingested yet — the mock generator runs every few seconds.</td>
+        </tr>
+        <tr th:each="d : ${decisions}">
+            <td th:text="${d.decisionId}"></td>
+            <td th:text="${d.agentId}"></td>
+            <td><span class="decision-type" th:text="${d.decisionType}"></span></td>
+            <td><span class="outcome-pill" th:text="${d.outcome}"></span></td>
+            <td th:text="${d.jurisdiction}"></td>
+            <td th:text="${d.timestamp}"></td>
+            <td class="reasoning-cell" th:text="${d.reasoningTrail}"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<div th:replace="~{layout :: footer}"></div>
+
+<script th:inline="none">
+    // Polls the ingestion REST API and re-renders the table body, so new
+    // mock decisions show up without a manual page reload.
+    const POLL_INTERVAL_MS = 4000;
+    const tbody = document.getElementById('decision-table-body');
+    const status = document.getElementById('feed-status');
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+    }
+
+    function renderRows(decisions) {
+        if (!decisions || decisions.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No decisions ingested yet — the mock generator runs every few seconds.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = decisions.map(function (d) {
+            return '<tr>'
+                + '<td>' + escapeHtml(d.decisionId) + '</td>'
+                + '<td>' + escapeHtml(d.agentId) + '</td>'
+                + '<td><span class="decision-type">' + escapeHtml(d.decisionType) + '</span></td>'
+                + '<td><span class="outcome-pill">' + escapeHtml(d.outcome) + '</span></td>'
+                + '<td>' + escapeHtml(d.jurisdiction) + '</td>'
+                + '<td>' + escapeHtml(d.timestamp) + '</td>'
+                + '<td class="reasoning-cell">' + escapeHtml(d.reasoningTrail) + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    function refresh() {
+        fetch('/api/decisions')
+            .then(function (res) {
+                if (!res.ok) throw new Error('request failed: ' + res.status);
+                return res.json();
+            })
+            .then(function (decisions) {
+                renderRows(decisions);
+                status.innerHTML = '<span class="dot"></span>Live — last updated ' + new Date().toLocaleTimeString();
+            })
+            .catch(function () {
+                status.textContent = 'Live updates paused — retrying...';
+            });
+    }
+
+    setInterval(refresh, POLL_INTERVAL_MS);
+</script>
+</body>
+</html>
