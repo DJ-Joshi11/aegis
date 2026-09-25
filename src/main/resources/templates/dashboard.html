@@ -5,6 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>AEGIS — Dashboard</title>
     <link rel="stylesheet" th:href="@{/css/aegis.css}"/>
+    <style>
+        /* Page-scoped styling only — shared aegis.css stays untouched. */
+        .stat-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0 2.5rem;
+        }
+        .stat-tile {
+            flex: 1 1 200px;
+            background: #fff;
+            border: 1px solid #e2e4ee;
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+        }
+        .stat-tile .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #8a8fa3;
+        }
+        .stat-tile .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 0.25rem;
+            color: #1a1a2e;
+        }
+        .stat-tile .stat-note {
+            font-size: 0.8rem;
+            color: #8a8fa3;
+            margin-top: 0.25rem;
+        }
+        .pipeline-flow {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0 2.5rem;
+            font-size: 0.95rem;
+        }
+        .pipeline-flow .step {
+            background: #1a1a2e;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+        }
+        .pipeline-flow .arrow { color: #8a8fa3; }
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        .empty-row td, .unavailable-note {
+            text-align: center;
+            color: #8a8fa3;
+            padding: 1.5rem 0;
+        }
+        .outcome-pill {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: #eef0fa;
+            color: #3d4270;
+        }
+        .sla-pill {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .sla-pill.breach { background: #fde8e8; color: #a83232; }
+        .sla-pill.flagged { background: #eef0fa; color: #3d4270; }
+    </style>
 </head>
 <body>
 <div th:replace="~{layout :: nav}"></div>
@@ -12,13 +91,91 @@
 <main class="aegis-content">
     <h1>Dashboard</h1>
     <p>
-        DAY-0 PLACEHOLDER — owned by Person C (com.aegis.payout / DashboardController).
-        This page should end up showing the whole pipeline at a glance: recent
-        decisions, how many were flagged, payouts triggered, and the current
-        pricing signal. See src/main/java/com/aegis/payout/README.md.
+        The whole AEGIS pipeline at a glance — decision in, flagged or
+        cleared, payout out, premium adjusted.
     </p>
+
+    <div class="pipeline-flow">
+        <span class="step">Decision</span><span class="arrow">&#8594;</span>
+        <span class="step">Flag / Compliance</span><span class="arrow">&#8594;</span>
+        <span class="step">Payout</span><span class="arrow">&#8594;</span>
+        <span class="step">Pricing</span>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat-tile">
+            <div class="stat-label">Decisions ingested</div>
+            <div class="stat-value" th:text="${decisionCount}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-label">Flagged by detection</div>
+            <div class="stat-value" th:text="${detectionAvailable} ? ${flaggedCount} : '—'">0</div>
+            <div class="stat-note" th:unless="${detectionAvailable}">Detection package not merged yet</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-label">Payouts triggered</div>
+            <div class="stat-value" th:text="${payoutCount}">0</div>
+        </div>
+        <div class="stat-tile">
+            <div class="stat-label">Agents priced</div>
+            <div class="stat-value" th:text="${#lists.size(pricing)}">0</div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h2>Recent decisions</h2>
+        <a th:href="@{/ingestion/decision-feed}">Full feed &#8594;</a>
+    </div>
+    <table>
+        <thead>
+        <tr><th>Decision ID</th><th>Agent</th><th>Type</th><th>Outcome</th><th>Jurisdiction</th></tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(recentDecisions)}" class="empty-row">
+            <td colspan="5">No decisions ingested yet.</td>
+        </tr>
+        <tr th:each="d : ${recentDecisions}">
+            <td th:text="${d.decisionId}"></td>
+            <td th:text="${d.agentId}"></td>
+            <td th:text="${d.decisionType}"></td>
+            <td><span class="outcome-pill" th:text="${d.outcome}"></span></td>
+            <td th:text="${d.jurisdiction}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="section-header">
+        <h2>Recent payouts</h2>
+        <a th:href="@{/payout/payouts}">Full payouts &amp; pricing &#8594;</a>
+    </div>
+    <table>
+        <thead>
+        <tr><th>Decision ID</th><th>Agent</th><th>Amount</th><th>Trigger</th></tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(payouts)}" class="empty-row">
+            <td colspan="4">No payouts triggered yet.</td>
+        </tr>
+        <tr th:each="p : ${payouts}">
+            <td th:text="${p.decisionId}"></td>
+            <td th:text="${p.agentId}"></td>
+            <td th:text="'$' + ${p.amount}"></td>
+            <td>
+                <span th:if="${p.slaBreached}" class="sla-pill breach">SLA breach</span>
+                <span th:unless="${p.slaBreached}" class="sla-pill flagged">Flagged</span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
 </main>
 
 <div th:replace="~{layout :: footer}"></div>
+
+<script th:inline="none">
+    // Refreshes the stat tiles and tables periodically by reloading — the
+    // dashboard aggregates three sources server-side (see DashboardController),
+    // so a full reload is simpler and cheap enough for this page.
+    setTimeout(function () { window.location.reload(); }, 8000);
+</script>
 </body>
 </html>
