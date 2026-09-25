@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AEGIS — Flags &amp; Compliance</title>
+    <link rel="stylesheet" th:href="@{/css/aegis.css}"/>
+    <style>
+        /* Page-scoped styling only — shared aegis.css stays untouched. */
+        .feed-header {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .feed-status {
+            font-size: 0.85rem;
+            color: #5a5f7a;
+        }
+        .feed-status .dot {
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: #34c77b;
+            margin-right: 0.4rem;
+        }
+        .reason-cell {
+            max-width: 260px;
+            font-weight: 600;
+            color: #a83232;
+        }
+        .compliance-cell {
+            max-width: 240px;
+            color: #4a4f6a;
+            font-size: 0.88rem;
+        }
+        .decision-type {
+            font-size: 0.78rem;
+            letter-spacing: 0.03em;
+            color: #5a5f7a;
+        }
+        .empty-row td {
+            text-align: center;
+            color: #8a8fa3;
+            padding: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{layout :: nav}"></div>
+
+<main class="aegis-content">
+    <div class="feed-header">
+        <h1>Flags &amp; Compliance</h1>
+        <span class="feed-status" id="feed-status"><span class="dot"></span>Live — updates every few seconds</span>
+    </div>
+    <p>
+        Every decision detection has flagged, why, and which jurisdiction's
+        explainability standard applies — the governance layer AEGIS pitches
+        as its strongest, most novel piece. Reason and compliance status
+        come first, on purpose: that's what a reviewer needs to see first.
+    </p>
+
+    <table id="flagged-table">
+        <thead>
+        <tr>
+            <th>Reason flagged</th>
+            <th>Compliance standard</th>
+            <th>Decision ID</th>
+            <th>Agent</th>
+            <th>Type</th>
+            <th>Outcome</th>
+            <th>Jurisdiction</th>
+            <th>Reviewed</th>
+        </tr>
+        </thead>
+        <tbody id="flagged-table-body">
+        <tr th:if="${#lists.isEmpty(flagged)}" class="empty-row">
+            <td colspan="8">No decisions flagged yet — detection reviews every decision as it arrives.</td>
+        </tr>
+        <tr th:each="f : ${flagged}">
+            <td class="reason-cell" th:text="${f.flagReason}"></td>
+            <td class="compliance-cell" th:text="${f.complianceStatus}"></td>
+            <td th:text="${f.decisionId}"></td>
+            <td th:text="${f.agentId}"></td>
+            <td><span class="decision-type" th:text="${f.decisionType}"></span></td>
+            <td th:text="${f.outcome}"></td>
+            <td th:text="${f.jurisdiction}"></td>
+            <td th:text="${f.reviewedAt}"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+
+<div th:replace="~{layout :: footer}"></div>
+
+<script th:inline="none">
+    // Polls the flagged-decisions REST API and re-renders the table body —
+    // same pattern as the ingestion decision-feed and payout pages.
+    const POLL_INTERVAL_MS = 4000;
+    const tbody = document.getElementById('flagged-table-body');
+    const status = document.getElementById('feed-status');
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+    }
+
+    function renderRows(flagged) {
+        if (!flagged || flagged.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No decisions flagged yet — detection reviews every decision as it arrives.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = flagged.map(function (f) {
+            return '<tr>'
+                + '<td class="reason-cell">' + escapeHtml(f.flagReason) + '</td>'
+                + '<td class="compliance-cell">' + escapeHtml(f.complianceStatus) + '</td>'
+                + '<td>' + escapeHtml(f.decisionId) + '</td>'
+                + '<td>' + escapeHtml(f.agentId) + '</td>'
+                + '<td><span class="decision-type">' + escapeHtml(f.decisionType) + '</span></td>'
+                + '<td>' + escapeHtml(f.outcome) + '</td>'
+                + '<td>' + escapeHtml(f.jurisdiction) + '</td>'
+                + '<td>' + escapeHtml(f.reviewedAt) + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    function refresh() {
+        fetch('/api/flagged')
+            .then(function (res) {
+                if (!res.ok) throw new Error('request failed: ' + res.status);
+                return res.json();
+            })
+            .then(function (flagged) {
+                renderRows(flagged);
+                status.innerHTML = '<span class="dot"></span>Live — last updated ' + new Date().toLocaleTimeString();
+            })
+            .catch(function () {
+                status.textContent = 'Live updates paused — retrying...';
+            });
+    }
+
+    setInterval(refresh, POLL_INTERVAL_MS);
+</script>
+</body>
+</html>
