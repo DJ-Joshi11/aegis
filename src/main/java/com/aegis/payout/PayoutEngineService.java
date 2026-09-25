@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -69,8 +71,25 @@ public class PayoutEngineService {
         this.slaWindow = Duration.ofSeconds(slaWindowSeconds);
     }
 
-    /** Every ingested decision starts its SLA clock here. */
+    /**
+     * Every ingested decision starts its SLA clock here.
+     *
+     * {@code @Order(HIGHEST_PRECEDENCE)} matters: {@link DecisionEvent} also
+     * has a listener in the detection package
+     * ({@code AnomalyDetectionService.onDecisionIngested}), which publishes
+     * {@link FlaggedDecision} synchronously as part of handling the same
+     * event. Spring doesn't guarantee an order between listeners in
+     * different beans, so without this, detection can sometimes resolve
+     * (and this class's {@link #onFlaggedDecision} can run) *before* this
+     * method has registered the decision as pending — at which point this
+     * method adds it back to {@code pending} right after, and it never gets
+     * removed again, so the SLA sweep pays it out 45s later even though it
+     * was already reviewed and clean. Forcing this listener to run first
+     * guarantees the decision is always pending before detection can
+     * resolve it.
+     */
     @EventListener
+    @Order(Ordered.HIGHEST_PRECEDENCE)
     public void onDecisionIngested(DecisionEvent decision) {
         pending.putIfAbsent(decision.decisionId(), new PendingDecision(decision.agentId(), Instant.now()));
     }
