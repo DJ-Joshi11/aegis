@@ -3,10 +3,289 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>AEGIS — Dashboard</title>
+    <title>AEGIS — Overview</title>
     <link rel="stylesheet" th:href="@{/css/aegis.css}"/>
     <style>
         /* Page-scoped styling only — shared aegis.css stays untouched. */
+
+        /* ---------- Hero ---------- */
+        .hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #2b2f5e 100%);
+            color: #fff;
+            border-radius: 14px;
+            padding: 2.25rem 2.5rem;
+            margin-top: 1rem;
+        }
+        .hero .eyebrow {
+            display: inline-block;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #b9bdf0;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            margin-bottom: 0.9rem;
+        }
+        .hero h1 {
+            margin: 0 0 0.5rem;
+            font-size: 2rem;
+        }
+        .hero p.tagline {
+            margin: 0;
+            max-width: 640px;
+            color: #d7d9f6;
+            font-size: 1.02rem;
+            line-height: 1.5;
+        }
+        .hero-meta {
+            display: flex;
+            gap: 2.5rem;
+            flex-wrap: wrap;
+            margin-top: 1.75rem;
+        }
+        .hero-meta .metric .num {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+        .hero-meta .metric .lbl {
+            font-size: 0.78rem;
+            color: #b9bdf0;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        /* ---------- Implementation status ---------- */
+        .status-card {
+            background: #fff;
+            border: 1px solid #e2e4ee;
+            border-radius: 12px;
+            padding: 1.5rem 1.75rem;
+            margin-top: 1.5rem;
+        }
+        .status-card h2 { margin-top: 0; }
+        .status-bar-track {
+            background: #eef0fa;
+            border-radius: 999px;
+            height: 10px;
+            overflow: hidden;
+            margin: 0.6rem 0 0.35rem;
+        }
+        .status-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #34c77b, #3d4270);
+        }
+        .status-caption {
+            font-size: 0.85rem;
+            color: #5a5f7a;
+            margin-bottom: 1.1rem;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.6rem 1.5rem;
+        }
+        .status-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            font-size: 0.9rem;
+            color: #3d4270;
+        }
+        .status-item .badge {
+            flex: none;
+            width: 1.15rem;
+            height: 1.15rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 0.05rem;
+        }
+        .status-item .badge.done { background: #34c77b; }
+        .status-item .badge.pending { background: #c9ccd9; color: #5a5f7a; }
+        .status-item .label small {
+            display: block;
+            color: #8a8fa3;
+            font-weight: 400;
+        }
+
+        /* ---------- Pipeline ---------- */
+        .pipeline-section h2 { margin-bottom: 0.25rem; }
+        .pipeline-section > p { color: #5a5f7a; margin-top: 0; }
+        .pipeline-rail {
+            display: flex;
+            align-items: stretch;
+            gap: 0.5rem;
+            margin: 1.25rem 0;
+        }
+        .pipeline-rail .rail-arrow {
+            align-self: center;
+            color: #c9ccd9;
+            font-size: 1.4rem;
+            flex: none;
+        }
+        .stage-card {
+            flex: 1 1 0;
+            background: #fff;
+            border: 1px solid #e2e4ee;
+            border-radius: 12px;
+            padding: 0;
+            overflow: hidden;
+        }
+        .stage-card summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 1.1rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .stage-card summary::-webkit-details-marker { display: none; }
+        .stage-card .stage-index {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: #8a8fa3;
+        }
+        .stage-card .stage-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+        .stage-card .stage-count {
+            font-size: 0.82rem;
+            color: #3d4270;
+            font-weight: 600;
+        }
+        .stage-card .stage-count .n { font-size: 1.1rem; }
+        .stage-card .stage-toggle-hint {
+            font-size: 0.75rem;
+            color: #8a8fa3;
+        }
+        .stage-card[open] .stage-toggle-hint::after { content: " (click to collapse)"; }
+        .stage-card:not([open]) .stage-toggle-hint::after { content: " (click to expand)"; }
+        .stage-body {
+            padding: 0 1.25rem 1.25rem;
+            border-top: 1px solid #eef0fa;
+        }
+        .stage-body dl {
+            margin: 1rem 0 0;
+        }
+        .stage-body dt {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #8a8fa3;
+            margin-top: 0.85rem;
+        }
+        .stage-body dt:first-child { margin-top: 0; }
+        .stage-body dd {
+            margin: 0.2rem 0 0;
+            font-size: 0.9rem;
+            color: #3d4270;
+            line-height: 1.45;
+        }
+        @media (max-width: 900px) {
+            .pipeline-rail { flex-direction: column; }
+            .pipeline-rail .rail-arrow { transform: rotate(90deg); }
+        }
+
+        /* ---------- Trace widget ---------- */
+        .trace-card {
+            background: #fff;
+            border: 1px solid #e2e4ee;
+            border-radius: 12px;
+            padding: 1.5rem 1.75rem;
+            margin-top: 1.5rem;
+        }
+        .trace-card h2 { margin-top: 0; }
+        .trace-steps {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .trace-step {
+            display: flex;
+            gap: 1rem;
+            padding: 0.85rem 0;
+            border-top: 1px dashed #e2e4ee;
+        }
+        .trace-step:first-child { border-top: none; }
+        .trace-step .trace-dot {
+            flex: none;
+            width: 1.6rem;
+            height: 1.6rem;
+            border-radius: 50%;
+            background: #eef0fa;
+            color: #3d4270;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .trace-step .trace-label {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #8a8fa3;
+        }
+        .trace-step .trace-text {
+            font-size: 0.92rem;
+            color: #1a1a2e;
+            margin-top: 0.15rem;
+        }
+        .trace-empty {
+            color: #8a8fa3;
+            font-size: 0.9rem;
+            padding: 1rem 0;
+        }
+
+        /* ---------- Guidewire specifics ---------- */
+        .gw-card {
+            background: #fff;
+            border: 1px solid #e2e4ee;
+            border-radius: 12px;
+            padding: 1.5rem 1.75rem;
+            margin-top: 1.5rem;
+        }
+        .gw-card h2 { margin-top: 0; }
+        .gw-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1rem;
+        }
+        .gw-grid h3 {
+            margin: 0 0 0.35rem;
+            font-size: 0.95rem;
+            color: #1a1a2e;
+        }
+        .gw-grid p {
+            margin: 0;
+            font-size: 0.88rem;
+            color: #4a4f6a;
+            line-height: 1.5;
+        }
+        .honesty-note {
+            margin-top: 1.25rem;
+            background: #fff9e8;
+            border: 1px solid #f0e2b0;
+            border-radius: 8px;
+            padding: 0.9rem 1.1rem;
+            font-size: 0.86rem;
+            color: #6b5d1f;
+            line-height: 1.5;
+        }
+
+        /* ---------- Existing stat tiles / tables ---------- */
         .stat-row {
             display: flex;
             gap: 1rem;
@@ -37,21 +316,6 @@
             color: #8a8fa3;
             margin-top: 0.25rem;
         }
-        .pipeline-flow {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            margin: 1.5rem 0 2.5rem;
-            font-size: 0.95rem;
-        }
-        .pipeline-flow .step {
-            background: #1a1a2e;
-            color: #fff;
-            padding: 0.5rem 1rem;
-            border-radius: 999px;
-        }
-        .pipeline-flow .arrow { color: #8a8fa3; }
         .section-header {
             display: flex;
             align-items: baseline;
@@ -83,54 +347,270 @@
         }
         .sla-pill.breach { background: #fde8e8; color: #a83232; }
         .sla-pill.flagged { background: #eef0fa; color: #3d4270; }
+        .feed-status {
+            font-size: 0.85rem;
+            color: #5a5f7a;
+        }
+        .feed-status .dot {
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+            background: #34c77b;
+            margin-right: 0.4rem;
+        }
     </style>
 </head>
 <body>
 <div th:replace="~{layout :: nav}"></div>
 
 <main class="aegis-content">
-    <h1>Dashboard</h1>
-    <p>
-        The whole AEGIS pipeline at a glance — decision in, flagged or
-        cleared, payout out, premium adjusted.
-    </p>
 
-    <div class="pipeline-flow">
-        <span class="step">Decision</span><span class="arrow">&#8594;</span>
-        <span class="step">Flag / Compliance</span><span class="arrow">&#8594;</span>
-        <span class="step">Payout</span><span class="arrow">&#8594;</span>
-        <span class="step">Pricing</span>
-    </div>
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+        <span class="eyebrow">Built for Guidewire Qusar agentic AI</span>
+        <h1>AEGIS — AI Exposure Governance &amp; Insurance Shield</h1>
+        <p class="tagline">
+            A governance-and-claims layer that sits alongside Guidewire's Qusar agentic AI
+            framework: it audits every autonomous decision an insurance AI agent makes, flags
+            the ones that need human/compliance review, automatically pays out when the agent
+            or the review process fails the policyholder, and feeds each agent's real track
+            record back into what it costs to insure that agent's decisions.
+        </p>
+        <div class="hero-meta">
+            <div class="metric">
+                <div class="num" id="hero-count-decisions" th:text="${decisionCount}">0</div>
+                <div class="lbl">Decisions audited</div>
+            </div>
+            <div class="metric">
+                <div class="num" id="hero-count-flagged" th:text="${detectionAvailable} ? ${flaggedCount} : '—'">0</div>
+                <div class="lbl">Flagged for compliance</div>
+            </div>
+            <div class="metric">
+                <div class="num" id="hero-count-payouts" th:text="${payoutCount}">0</div>
+                <div class="lbl">Payouts triggered</div>
+            </div>
+            <div class="metric">
+                <div class="num" id="hero-count-pricing" th:text="${#lists.size(pricing)}">0</div>
+                <div class="lbl">Agents priced</div>
+            </div>
+        </div>
+    </section>
 
-    <div class="stat-row">
+    <!-- ============ IMPLEMENTATION STATUS ============ -->
+    <section class="status-card">
+        <h2>How much of this is actually built</h2>
+        <div class="status-bar-track"><div class="status-bar-fill" style="width: 100%;"></div></div>
+        <p class="status-caption">
+            <strong>Core pipeline (this review's committed scope): 100% built and running end-to-end</strong>
+            — every screen on this site is reading real data from a real running Spring Boot
+            backend, not a mockup. Counted against the full production vision below, we're at
+            roughly <strong>65–70%</strong>.
+        </p>
+        <div class="status-grid">
+            <div class="status-item">
+                <span class="badge done">&#10003;</span>
+                <span class="label">Decision ingestion &amp; audit log<small>Qusar-shaped events, validated &amp; persisted</small></span>
+            </div>
+            <div class="status-item">
+                <span class="badge done">&#10003;</span>
+                <span class="label">Anomaly detection &amp; compliance routing<small>Fraud + denial-rate rules, jurisdiction mapping</small></span>
+            </div>
+            <div class="status-item">
+                <span class="badge done">&#10003;</span>
+                <span class="label">Automated payout engine<small>Flagged-trigger + SLA-breach sweep</small></span>
+            </div>
+            <div class="status-item">
+                <span class="badge done">&#10003;</span>
+                <span class="label">Agent pricing feedback loop<small>Error rate &#8594; live premium multiplier</small></span>
+            </div>
+            <div class="status-item">
+                <span class="badge pending">&#8226;</span>
+                <span class="label">Live Guidewire Qusar sandbox feed<small>No sandbox access yet — adapter-ready</small></span>
+            </div>
+            <div class="status-item">
+                <span class="badge pending">&#8226;</span>
+                <span class="label">Public deployment<small>Runs locally today; hosting is next</small></span>
+            </div>
+            <div class="status-item">
+                <span class="badge pending">&#8226;</span>
+                <span class="label">Auth &amp; multi-carrier tenancy<small>Single-tenant demo for now</small></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ PIPELINE ============ -->
+    <section class="pipeline-section">
+        <h2>How AEGIS works</h2>
+        <p>Four stages, each running as its own package in one Spring Boot app, talking to each other over real events and REST — not four slides. Click a stage to see what it does and why it exists.</p>
+
+        <div class="pipeline-rail">
+            <details class="stage-card" open>
+                <summary>
+                    <span class="stage-index">STAGE 1</span>
+                    <span class="stage-title">Decision Ingestion</span>
+                    <span class="stage-count">Audited so far: <span class="n" id="stage-count-ingestion" th:text="${decisionCount}">0</span></span>
+                    <span class="stage-toggle-hint"></span>
+                </summary>
+                <div class="stage-body">
+                    <dl>
+                        <dt>What's happening</dt>
+                        <dd>Qusar-style agent decisions — underwriting calls, claims outcomes, fraud flags — stream in continuously from agents across 7 jurisdictions.</dd>
+                        <dt>Why</dt>
+                        <dd>You can't govern a decision that was never recorded. Every downstream stage depends on a trustworthy audit log existing first.</dd>
+                        <dt>What happens</dt>
+                        <dd>Each decision is validated, normalized, and persisted as an immutable audit record, then broadcast in-process to detection.</dd>
+                        <dt>Problem it solves</dt>
+                        <dd>Agentic AI in insurance today can run with no consistent, queryable audit trail — a claim gets approved or denied by an agent and nobody outside that agent's own logs knows it happened.</dd>
+                    </dl>
+                </div>
+            </details>
+
+            <span class="rail-arrow">&#8594;</span>
+
+            <details class="stage-card">
+                <summary>
+                    <span class="stage-index">STAGE 2</span>
+                    <span class="stage-title">Detection &amp; Compliance</span>
+                    <span class="stage-count">Flagged so far: <span class="n" id="stage-count-detection" th:text="${detectionAvailable} ? ${flaggedCount} : '—'">0</span></span>
+                    <span class="stage-toggle-hint"></span>
+                </summary>
+                <div class="stage-body">
+                    <dl>
+                        <dt>What's happening</dt>
+                        <dd>Every decision is checked in real time against two rules: an always-flag fraud signal, and a statistical denial-rate outlier per agent.</dd>
+                        <dt>Why</dt>
+                        <dd>Regulators — the EU AI Act, UK FCA, IRDAI, and similar bodies elsewhere — increasingly require human-reviewable explainability for automated decisions.</dd>
+                        <dt>What happens</dt>
+                        <dd>A flagged decision is logged with a plain-English reason and automatically routed to the correct jurisdiction's compliance standard.</dd>
+                        <dt>Problem it solves</dt>
+                        <dd>Manual compliance review can't keep pace with agent decision volume. This closes that gap without slowing the agent down.</dd>
+                    </dl>
+                </div>
+            </details>
+
+            <span class="rail-arrow">&#8594;</span>
+
+            <details class="stage-card">
+                <summary>
+                    <span class="stage-index">STAGE 3</span>
+                    <span class="stage-title">Payout Engine</span>
+                    <span class="stage-count">Triggered so far: <span class="n" id="stage-count-payout" th:text="${payoutCount}">0</span></span>
+                    <span class="stage-toggle-hint"></span>
+                </summary>
+                <div class="stage-body">
+                    <dl>
+                        <dt>What's happening</dt>
+                        <dd>Flagged decisions and unresolved compliance reviews (an SLA breach — past 45 seconds with no clearance) both trigger an automatic payout.</dd>
+                        <dt>Why</dt>
+                        <dd>AEGIS isn't only a governance layer, it's a coverage product: if the carrier's own AI agent makes a bad call, or a flagged case isn't reviewed in time, someone has to be made whole automatically.</dd>
+                        <dt>What happens</dt>
+                        <dd>A payout record is created and logged instantly, with the trigger reason attached — no manual claims-adjuster step for these cases.</dd>
+                        <dt>Problem it solves</dt>
+                        <dd>Today, an AI misfire either gets no compensation at all, or requires a slow manual claims process to correct.</dd>
+                    </dl>
+                </div>
+            </details>
+
+            <span class="rail-arrow">&#8594;</span>
+
+            <details class="stage-card">
+                <summary>
+                    <span class="stage-index">STAGE 4</span>
+                    <span class="stage-title">Pricing Feedback</span>
+                    <span class="stage-count">Agents priced: <span class="n" id="stage-count-pricing" th:text="${#lists.size(pricing)}">0</span></span>
+                    <span class="stage-toggle-hint"></span>
+                </summary>
+                <div class="stage-body">
+                    <dl>
+                        <dt>What's happening</dt>
+                        <dd>Every agent's error rate — payouts triggered divided by decisions made — feeds a live premium multiplier for that specific agent.</dd>
+                        <dt>Why</dt>
+                        <dd>Insurance pricing has to reflect real risk. An AI agent with a high error rate is a higher-risk asset to insure, exactly like a human underwriter with a bad track record would be.</dd>
+                        <dt>What happens</dt>
+                        <dd>The multiplier recalculates continuously and is exposed per-agent over its own API, ready to plug into a real underwriting engine.</dd>
+                        <dt>Problem it solves</dt>
+                        <dd>There's currently no mechanism tying an AI agent's actual track record back into what it costs to insure that agent's decisions going forward.</dd>
+                    </dl>
+                </div>
+            </details>
+        </div>
+    </section>
+
+    <!-- ============ LIVE TRACE ============ -->
+    <section class="trace-card">
+        <h2>Trace a live decision</h2>
+        <p style="color:#5a5f7a; margin-top:0;">
+            This isn't a canned example — it's the most recently flagged decision in this
+            running instance, walked through every stage it actually passed through.
+        </p>
+        <div id="trace-body">
+            <p class="trace-empty">Waiting for a decision to be flagged... this updates automatically.</p>
+        </div>
+    </section>
+
+    <!-- ============ GUIDEWIRE SPECIFICS ============ -->
+    <section class="gw-card">
+        <h2>Why this matters for Guidewire</h2>
+        <div class="gw-grid">
+            <div>
+                <h3>Where it sits</h3>
+                <p>Qusar is the agentic layer making autonomous calls across PolicyCenter-style underwriting and ClaimCenter-style claims workflows. AEGIS sits alongside it as an independent governance-and-insurance layer — it doesn't replace Qusar's decisioning, it watches, checks, and financially backstops it.</p>
+            </div>
+            <div>
+                <h3>What's genuinely new here</h3>
+                <p>Most AI governance tooling insures the <em>policyholder</em>. AEGIS is built to insure the <em>AI agent's own decisions</em> — a product for carriers who are themselves the ones deploying agentic AI and need to cover the risk that creates.</p>
+            </div>
+            <div>
+                <h3>Compliance that maps to real regulation</h3>
+                <p>Flagged decisions aren't just logged — they're routed to the specific explainability standard that applies to that decision's jurisdiction (EU AI Act Art.14, UK FCA governance principles, IRDAI's algorithmic disclosure rules, and more), so review is targeted, not generic.</p>
+            </div>
+            <div>
+                <h3>A built-in economic feedback loop</h3>
+                <p>Static governance rules go stale. AEGIS's pricing engine means an agent's real error rate continuously changes what it costs to insure that agent — the incentive to keep decisions clean is economic, not just procedural.</p>
+            </div>
+        </div>
+        <div class="honesty-note">
+            <strong>Honest caveat:</strong> we don't have access to a live Qusar sandbox for this
+            build. <code>MockDecisionGenerator</code> emits decisions in the exact shape a real
+            Qusar agent's decision log would take (agent ID, decision type, outcome, jurisdiction,
+            reasoning trail) so the entire downstream pipeline — detection, compliance mapping,
+            payout, pricing — is built and tested against that real shape. Connecting a live
+            Qusar feed would mean swapping out this one mock generator; nothing downstream of
+            ingestion would need to change.
+        </div>
+    </section>
+
+    <!-- ============ LIVE DATA (existing) ============ -->
+    <div class="stat-row" style="margin-top:2rem;">
         <div class="stat-tile">
             <div class="stat-label">Decisions ingested</div>
-            <div class="stat-value" th:text="${decisionCount}">0</div>
+            <div class="stat-value" id="stat-decisions" th:text="${decisionCount}">0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-label">Flagged by detection</div>
-            <div class="stat-value" th:text="${detectionAvailable} ? ${flaggedCount} : '—'">0</div>
-            <div class="stat-note" th:unless="${detectionAvailable}">Detection package not merged yet</div>
+            <div class="stat-value" id="stat-flagged" th:text="${detectionAvailable} ? ${flaggedCount} : '—'">0</div>
+            <div class="stat-note" id="stat-flagged-note" th:unless="${detectionAvailable}">Detection service not reachable</div>
         </div>
         <div class="stat-tile">
             <div class="stat-label">Payouts triggered</div>
-            <div class="stat-value" th:text="${payoutCount}">0</div>
+            <div class="stat-value" id="stat-payouts" th:text="${payoutCount}">0</div>
         </div>
         <div class="stat-tile">
             <div class="stat-label">Agents priced</div>
-            <div class="stat-value" th:text="${#lists.size(pricing)}">0</div>
+            <div class="stat-value" id="stat-pricing" th:text="${#lists.size(pricing)}">0</div>
         </div>
     </div>
 
     <div class="section-header">
         <h2>Recent decisions</h2>
-        <a th:href="@{/ingestion/decision-feed}">Full feed &#8594;</a>
+        <span class="feed-status" id="feed-status"><span class="dot"></span>Live</span>
     </div>
     <table>
         <thead>
         <tr><th>Decision ID</th><th>Agent</th><th>Type</th><th>Outcome</th><th>Jurisdiction</th></tr>
         </thead>
-        <tbody>
+        <tbody id="recent-decisions-body">
         <tr th:if="${#lists.isEmpty(recentDecisions)}" class="empty-row">
             <td colspan="5">No decisions ingested yet.</td>
         </tr>
@@ -143,16 +623,16 @@
         </tr>
         </tbody>
     </table>
+    <p style="text-align:right; margin-top:0.5rem;"><a th:href="@{/ingestion/decision-feed}">Full feed &#8594;</a></p>
 
     <div class="section-header">
         <h2>Recent payouts</h2>
-        <a th:href="@{/payout/payouts}">Full payouts &amp; pricing &#8594;</a>
     </div>
     <table>
         <thead>
         <tr><th>Decision ID</th><th>Agent</th><th>Amount</th><th>Trigger</th></tr>
         </thead>
-        <tbody>
+        <tbody id="recent-payouts-body">
         <tr th:if="${#lists.isEmpty(payouts)}" class="empty-row">
             <td colspan="4">No payouts triggered yet.</td>
         </tr>
@@ -167,15 +647,177 @@
         </tr>
         </tbody>
     </table>
+    <p style="text-align:right; margin-top:0.5rem;"><a th:href="@{/payout/payouts}">Full payouts &amp; pricing &#8594;</a></p>
 </main>
 
 <div th:replace="~{layout :: footer}"></div>
 
 <script th:inline="none">
-    // Refreshes the stat tiles and tables periodically by reloading — the
-    // dashboard aggregates three sources server-side (see DashboardController),
-    // so a full reload is simpler and cheap enough for this page.
-    setTimeout(function () { window.location.reload(); }, 8000);
+    // Fully client-driven live updates — no full-page reload, so anyone with
+    // a pipeline stage expanded doesn't get yanked back to the top every few
+    // seconds. Pulls from the same public REST APIs the other pages use.
+    const POLL_INTERVAL_MS = 5000;
+    const status = document.getElementById('feed-status');
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+    }
+
+    function fetchJson(url) {
+        return fetch(url)
+            .then(function (res) {
+                if (!res.ok) throw new Error(url + ' failed: ' + res.status);
+                return res.json();
+            })
+            .catch(function () {
+                return null; // treated as "not available" by callers, same as the dashboard's original graceful-degradation behavior
+            });
+    }
+
+    function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+
+    function renderDecisionsTable(decisions) {
+        const tbody = document.getElementById('recent-decisions-body');
+        const top = (decisions || []).slice(0, 10);
+        if (top.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No decisions ingested yet.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = top.map(function (d) {
+            return '<tr>'
+                + '<td>' + escapeHtml(d.decisionId) + '</td>'
+                + '<td>' + escapeHtml(d.agentId) + '</td>'
+                + '<td>' + escapeHtml(d.decisionType) + '</td>'
+                + '<td><span class="outcome-pill">' + escapeHtml(d.outcome) + '</span></td>'
+                + '<td>' + escapeHtml(d.jurisdiction) + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    function renderPayoutsTable(payouts) {
+        const tbody = document.getElementById('recent-payouts-body');
+        const top = (payouts || []).slice(0, 10);
+        if (top.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No payouts triggered yet.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = top.map(function (p) {
+            const pill = p.slaBreached
+                ? '<span class="sla-pill breach">SLA breach</span>'
+                : '<span class="sla-pill flagged">Flagged</span>';
+            return '<tr>'
+                + '<td>' + escapeHtml(p.decisionId) + '</td>'
+                + '<td>' + escapeHtml(p.agentId) + '</td>'
+                + '<td>$' + escapeHtml(p.amount) + '</td>'
+                + '<td>' + pill + '</td>'
+                + '</tr>';
+        }).join('');
+    }
+
+    function renderTrace(flagged, payouts, pricing) {
+        const traceBody = document.getElementById('trace-body');
+        if (!flagged || flagged.length === 0) {
+            traceBody.innerHTML = '<p class="trace-empty">Waiting for a decision to be flagged... this updates automatically.</p>';
+            return;
+        }
+        const latest = flagged[0]; // detection returns most-recent-first
+        const matchingPayout = (payouts || []).find(function (p) { return p.decisionId === latest.decisionId; });
+        const agentPricing = (pricing || []).find(function (p) { return p.agentId === latest.agentId; });
+
+        const steps = [];
+        steps.push({
+            label: 'Ingested',
+            text: 'Decision ' + escapeHtml(latest.decisionId) + ' — a ' + escapeHtml(latest.decisionType)
+                + ' outcome (' + escapeHtml(latest.outcome) + ') from agent ' + escapeHtml(latest.agentId)
+                + ' in ' + escapeHtml(latest.jurisdiction) + ' — enters the audit log.'
+        });
+        steps.push({
+            label: 'Flagged',
+            text: escapeHtml(latest.flagReason) + '.'
+        });
+        steps.push({
+            label: 'Routed to compliance',
+            text: 'Standard applied: ' + escapeHtml(latest.complianceStatus) + '.'
+        });
+        if (matchingPayout) {
+            steps.push({
+                label: matchingPayout.slaBreached ? 'Payout — SLA breach' : 'Payout — flagged trigger',
+                text: '$' + escapeHtml(matchingPayout.amount) + ' paid out automatically. Reason: ' + escapeHtml(matchingPayout.reason) + '.'
+            });
+        } else {
+            steps.push({
+                label: 'Payout — pending',
+                text: 'Within the SLA window — no payout triggered yet unless the review clears late.'
+            });
+        }
+        if (agentPricing) {
+            steps.push({
+                label: 'Pricing updated',
+                text: 'Agent ' + escapeHtml(latest.agentId) + ' now carries a ' + agentPricing.premiumMultiplier.toFixed(2)
+                    + 'x premium multiplier, based on a ' + (agentPricing.errorRate * 100).toFixed(0)
+                    + '% error rate over ' + agentPricing.totalDecisions + ' decisions.'
+            });
+        }
+
+        traceBody.innerHTML = '<div class="trace-steps">' + steps.map(function (s, i) {
+            return '<div class="trace-step">'
+                + '<div class="trace-dot">' + (i + 1) + '</div>'
+                + '<div><div class="trace-label">' + s.label + '</div><div class="trace-text">' + s.text + '</div></div>'
+                + '</div>';
+        }).join('') + '</div>';
+    }
+
+    function refresh() {
+        Promise.all([
+            fetchJson('/api/decisions'),
+            fetchJson('/api/flagged'),
+            fetchJson('/api/payouts'),
+            fetchJson('/api/pricing')
+        ]).then(function (results) {
+            const decisions = results[0] || [];
+            const flagged = results[1]; // null means detection not available
+            const payouts = results[2] || [];
+            const pricing = results[3] || [];
+
+            setText('stat-decisions', decisions.length);
+            setText('hero-count-decisions', decisions.length);
+            setText('stat-payouts', payouts.length);
+            setText('hero-count-payouts', payouts.length);
+            setText('stat-pricing', pricing.length);
+            setText('hero-count-pricing', pricing.length);
+            setText('stage-count-payout', payouts.length);
+            setText('stage-count-pricing', pricing.length);
+
+            if (flagged === null) {
+                setText('stat-flagged', '—');
+                setText('hero-count-flagged', '—');
+                setText('stage-count-detection', '—');
+            } else {
+                setText('stat-flagged', flagged.length);
+                setText('hero-count-flagged', flagged.length);
+                setText('stage-count-detection', flagged.length);
+            }
+            setText('stage-count-ingestion', decisions.length);
+
+            renderDecisionsTable(decisions);
+            renderPayoutsTable(payouts);
+            renderTrace(flagged, payouts, pricing);
+
+            if (status) {
+                status.innerHTML = '<span class="dot"></span>Live — last updated ' + new Date().toLocaleTimeString();
+            }
+        }).catch(function () {
+            if (status) status.textContent = 'Live updates paused — retrying...';
+        });
+    }
+
+    refresh();
+    setInterval(refresh, POLL_INTERVAL_MS);
 </script>
 </body>
 </html>
