@@ -5,7 +5,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * Smoke test: the app context loads. Each package's own tests
- * (AnomalyDetectionServiceTest, PayoutEngineServiceTest, etc.) go in
+ * (AnomalyDetectionServiceTest, EvidenceMappingServiceTest, etc.) go in
  * their matching src/test/java/com/aegis/<package>/ folder.
  */
 @SpringBootTest

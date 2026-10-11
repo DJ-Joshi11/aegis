@@ -19,7 +19,7 @@ layer sitting on top of agentic AI decisions.
    e.g. EU → "EU AI Act Art.14 explainability", India → "IRDAI disclosure",
    US → "state AI disclosure rule") and sets `complianceStatus`.
 3. Publishes `FlaggedDecision` as a Spring `ApplicationEvent` for the
-   payout package.
+   evidence package.
 4. **`FlaggedController`** — `GET /api/flagged`.
 5. **UI page** — `src/main/resources/templates/detection/flags.html`,
    using the shared `nav`/`footer` fragments from `templates/layout.html`.

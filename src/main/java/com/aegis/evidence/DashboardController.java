@@ -1,4 +1,4 @@
-package com.aegis.payout;
+package com.aegis.evidence;
 
 import com.aegis.contracts.DecisionEvent;
 import org.slf4j.Logger;
@@ -14,9 +14,9 @@ import java.util.List;
 
 /**
  * The landing page: the whole pipeline at a glance — recent decisions, how
- * many have been flagged, payouts triggered, and the current pricing
- * signal. Takes over "/" from the day-0 {@code com.aegis.HomeController}
- * placeholder, which this package deletes.
+ * many have been flagged, how much audit evidence has been recorded, and
+ * the current exposure summary. Takes over "/" from the day-0
+ * {@code com.aegis.HomeController} placeholder, which this package deletes.
  *
  * Pulls ingestion and detection data over their own REST APIs (rather than
  * importing their internal classes) so this package stays independent of
@@ -32,15 +32,15 @@ public class DashboardController {
     private static final Logger log = LoggerFactory.getLogger(DashboardController.class);
 
     private final RestClient restClient;
-    private final PayoutEngineService payoutEngineService;
-    private final PricingFeedbackService pricingFeedbackService;
+    private final EvidenceMappingService evidenceMappingService;
+    private final ExposureAggregationService exposureAggregationService;
 
     public DashboardController(@Value("${server.port:8080}") int serverPort,
-                                PayoutEngineService payoutEngineService,
-                                PricingFeedbackService pricingFeedbackService) {
+                                EvidenceMappingService evidenceMappingService,
+                                ExposureAggregationService exposureAggregationService) {
         this.restClient = RestClient.create("http://localhost:" + serverPort);
-        this.payoutEngineService = payoutEngineService;
-        this.pricingFeedbackService = pricingFeedbackService;
+        this.evidenceMappingService = evidenceMappingService;
+        this.exposureAggregationService = exposureAggregationService;
     }
 
     @GetMapping("/")
@@ -52,9 +52,9 @@ public class DashboardController {
         model.addAttribute("decisionCount", recentDecisions.size());
         model.addAttribute("flaggedCount", flaggedCount);
         model.addAttribute("detectionAvailable", flaggedCount != null);
-        model.addAttribute("payouts", payoutEngineService.getAllPayouts().stream().limit(10).toList());
-        model.addAttribute("payoutCount", payoutEngineService.getAllPayouts().size());
-        model.addAttribute("pricing", pricingFeedbackService.getPricingSummary());
+        model.addAttribute("evidence", evidenceMappingService.getAllEvidence().stream().limit(10).toList());
+        model.addAttribute("evidenceCount", evidenceMappingService.getAllEvidence().size());
+        model.addAttribute("exposureSummary", exposureAggregationService.getExposureSummary());
         return "dashboard";
     }
 

@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * The "Check" mechanic: reviews every ingested decision, flags the ones
  * that look wrong, and publishes the outcome as a {@link FlaggedDecision}
- * for the payout package.
+ * for the evidence package.
  *
  * Two flagging rules, both simple by design (this demonstrates the
  * anomaly-detection concept, it isn't a real ML model):

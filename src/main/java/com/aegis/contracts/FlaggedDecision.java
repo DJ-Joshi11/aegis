@@ -6,7 +6,7 @@ package com.aegis.contracts;
  * jurisdiction.
  *
  * OWNERSHIP: shared contract. Do not change without agreement from all
- * three teammates — payout depends on this shape exactly as it stands.
+ * three teammates — evidence depends on this shape exactly as it stands.
  */
 public record FlaggedDecision(
         DecisionEvent decision,

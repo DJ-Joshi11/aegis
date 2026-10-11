@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * AEGIS — AI Exposure Governance & Insurance Shield.
  *
  * Entry point for the single-module Spring Boot app. Each teammate builds
- * inside their own package (com.aegis.ingestion / detection / payout) —
+ * inside their own package (com.aegis.ingestion / detection / evidence) —
  * see this package's README.md and each package's own README.md for scope.
  */
 @SpringBootApplication

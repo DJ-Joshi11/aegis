@@ -15,7 +15,7 @@ import java.util.UUID;
  * section). On a fixed schedule, generates one plausible AI-agent decision
  * — underwriting, claims, or fraud-flag — and runs it through the same
  * {@link DecisionIngestionService} a real feed would use, so the rest of
- * the pipeline (audit log, detection, payout) can't tell the difference.
+ * the pipeline (audit log, detection, evidence mapping) can't tell the difference.
  *
  * The interval is overridable via {@code aegis.ingestion.mock-interval-ms}
  * (defaults to 8000ms) without needing to touch the shared

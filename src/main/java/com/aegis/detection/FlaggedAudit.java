@@ -12,7 +12,7 @@ import java.time.Instant;
  *
  * Only decisions detection actually flagged are stored here — same pattern
  * as {@code com.aegis.ingestion.DecisionAudit} and
- * {@code com.aegis.payout.PayoutAudit}: a persistence-layer concern,
+ * {@code com.aegis.evidence.EvidenceRecord}: a persistence-layer concern,
  * separate from the shared {@code FlaggedDecision} contract record.
  */
 @Entity

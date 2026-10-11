@@ -8,7 +8,7 @@ follows this.
 ```bash
 git clone <the repo URL DJ gives you>
 cd aegis
-git checkout -b feature/<your-slice>   # feature/ingestion | feature/detection | feature/payout
+git checkout -b feature/<your-slice>   # feature/ingestion | feature/detection | feature/evidence
 ```
 
 ## 2. Only touch your own files

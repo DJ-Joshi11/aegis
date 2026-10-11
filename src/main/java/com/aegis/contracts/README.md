@@ -5,9 +5,9 @@ owned by the whole team.**
 
 | Record | Produced by | Consumed by |
 |---|---|---|
-| `DecisionEvent` | Ingestion | Detection, Payout |
-| `FlaggedDecision` | Detection | Payout |
-| `PayoutResult` | Payout | Dashboard |
+| `DecisionEvent` | Ingestion | Detection, Evidence |
+| `FlaggedDecision` | Detection | Evidence |
+| `ExposureEvidenceRecord` | Evidence | Dashboard |
 
 ## Rule
 

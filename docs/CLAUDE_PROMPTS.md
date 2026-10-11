@@ -10,7 +10,7 @@ one across teammates, it causes overlapping edits.
 ## Person A — Ingestion
 
 ```
-I'm building the "ingestion" slice of AEGIS, a Spring Boot 3 / Java 21 app. AEGIS monitors AI-agent decisions inside a Guidewire-style insurance core system and auto-triggers payout/compliance action when a decision turns out bad. Single Maven module, one package per teammate, H2 database. I've already cloned the repo and I'm on branch feature/ingestion.
+I'm building the "ingestion" slice of AEGIS, a Spring Boot 3 / Java 21 app. AEGIS monitors AI-agent decisions inside a Guidewire-style insurance core system and maps flagged or unreviewed decisions to audit evidence + an insurance exposure category — it does not certify compliance, make coverage decisions, or set a premium. Single Maven module, one package per teammate, H2 database. I've already cloned the repo and I'm on branch feature/ingestion.
 
 My package: com.aegis.ingestion. Full scope is in src/main/java/com/aegis/ingestion/README.md — read that file first.
 
@@ -33,7 +33,7 @@ Build me this package, service-first then the REST layer then the UI page, with 
 ## Person B — Detection & Compliance
 
 ```
-I'm building the "detection" slice of AEGIS, a Spring Boot 3 / Java 21 app. AEGIS monitors AI-agent decisions inside a Guidewire-style insurance core system and auto-triggers payout/compliance action when a decision turns out bad. Single Maven module, one package per teammate, H2 database. I've already cloned the repo and I'm on branch feature/detection.
+I'm building the "detection" slice of AEGIS, a Spring Boot 3 / Java 21 app. AEGIS monitors AI-agent decisions inside a Guidewire-style insurance core system and maps flagged or unreviewed decisions to audit evidence + an insurance exposure category — it does not certify compliance, make coverage decisions, or set a premium. Single Maven module, one package per teammate, H2 database. I've already cloned the repo and I'm on branch feature/detection.
 
 My package: com.aegis.detection. Full scope is in src/main/java/com/aegis/detection/README.md — read that file first.
 
@@ -55,25 +55,25 @@ Build me this package, service-first then the REST layer then the UI page, with 
 
 ---
 
-## Person C — Payout, Pricing & Dashboard
+## Person C — Evidence Mapping, Exposure Aggregation & Dashboard
 
 ```
-I'm building the "payout" slice of AEGIS, a Spring Boot 3 / Java 21 app. AEGIS monitors AI-agent decisions inside a Guidewire-style insurance core system and auto-triggers payout/compliance action when a decision turns out bad. Single Maven module, one package per teammate, H2 database. I've already cloned the repo and I'm on branch feature/payout.
+I'm building the "evidence" slice of AEGIS, a Spring Boot 3 / Java 21 app. AEGIS monitors AI-agent decisions inside a Guidewire-style insurance core system and maps flagged or unreviewed decisions to audit evidence + an insurance exposure category — it does not certify compliance, make coverage decisions, or set a premium. Single Maven module, one package per teammate, H2 database. I've already cloned the repo and I'm on branch feature/evidence.
 
-My package: com.aegis.payout. Full scope is in src/main/java/com/aegis/payout/README.md — read that file first.
+My package: com.aegis.evidence. Full scope is in src/main/java/com/aegis/evidence/README.md — read that file first.
 
 Shared contracts (already in com.aegis.contracts, do not modify):
 record DecisionEvent(String decisionId, String agentId, String decisionType, String outcome, Instant timestamp, String jurisdiction, String reasoningTrail) {}
 record FlaggedDecision(DecisionEvent decision, boolean flagged, String flagReason, String complianceStatus) {}
-record PayoutResult(String decisionId, boolean payoutTriggered, double amount, boolean slaBreached) {}
+record ExposureEvidenceRecord(String decisionId, boolean evidenceRecorded, String exposureCategory, boolean controlGapIdentified) {}
 
 Build, in order:
-1. PayoutEngineService — listens for FlaggedDecision via @EventListener; if flagged is true (or an SLA window, e.g. 48h, is breached with no resolution), computes a payout amount with a simple parametric rule, publishes a PayoutResult.
-2. PricingFeedbackService — keeps a running "agent error rate" per agentId from PayoutResults seen so far, and a simple premium-adjustment number derived from it. Simple math is fine.
-3. PayoutController + DashboardController — GET /api/payouts, and the "/" route (replace the day-0 com.aegis.HomeController placeholder once this exists — delete that class). Pull a summary across all three slices for the dashboard (call the other REST endpoints, or read shared H2 tables directly — whichever is simpler given the timeline).
-4. UI pages: templates/payout/payouts.html (payout list + pricing signal) and templates/dashboard.html (the landing page — recent decisions, flagged count, payouts triggered, current premium signal; make decision -> flag -> payout -> price visually obvious). Both use the shared nav/footer fragments from templates/layout.html.
+1. EvidenceMappingService — listens for FlaggedDecision via @EventListener; if flagged is true (or a review window, e.g. 48h, passes with no resolution), maps the decision type to a broad exposure category (UNDERWRITING -> Underwriting Risk Exposure, CLAIMS -> Claims Handling Exposure, FRAUD_FLAG -> Fraud & Integrity Exposure), records an evidence row, publishes an ExposureEvidenceRecord.
+2. ExposureAggregationService — keeps a running "evidence rate" and dominant exposure category per agentId from the outcomes EvidenceMappingService reports. Simple math is fine — it's informational only, never a premium or coverage figure.
+3. EvidenceController + DashboardController — GET /api/evidence, GET /api/exposure-summary, GET /api/evidence/export (a downloadable audit bundle), and the "/" route (replace the day-0 com.aegis.HomeController placeholder once this exists — delete that class). Pull a summary across all three slices for the dashboard (call the other REST endpoints, or read shared H2 tables directly — whichever is simpler given the timeline).
+4. UI pages: templates/evidence/records.html (evidence list + exposure summary + export link) and templates/dashboard.html (the landing page — recent decisions, flagged count, evidence records, current exposure summary; make decision -> flag -> evidence -> exposure category visually obvious, without ever implying a payout or a price was set). Both use the shared nav/footer fragments from templates/layout.html.
 
-Guardrail: only create/edit files under src/main/java/com/aegis/payout/**, src/main/resources/templates/payout/**, templates/dashboard.html, com/aegis/HomeController.java, and my own test files. Never edit com.aegis.contracts, layout.html, aegis.css, pom.xml, or another package's own files — flag it to me instead so we change it together.
+Guardrail: only create/edit files under src/main/java/com/aegis/evidence/**, src/main/resources/templates/evidence/**, templates/dashboard.html, com/aegis/HomeController.java, and my own test files. Never edit com.aegis.contracts, layout.html, aegis.css, pom.xml, or another package's own files — flag it to me instead so we change it together.
 
-Build me this package, service-first then the REST layer then the UI pages, with a couple of unit tests for PayoutEngineService covering an SLA-breach case and a clean case.
+Build me this package, service-first then the REST layer then the UI pages, with a couple of unit tests for EvidenceMappingService covering a review-gap case and a clean case.
 ```

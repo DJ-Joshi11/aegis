@@ -8,7 +8,7 @@ import java.time.Instant;
  * would emit (see the main README's "How we're using Qusar" section).
  *
  * OWNERSHIP: shared contract. Do not change without agreement from all
- * three teammates — detection and payout both depend on this shape exactly
+ * three teammates — detection and evidence both depend on this shape exactly
  * as it stands. Add fields in their own small PR, never inside a feature branch.
  */
 public record DecisionEvent(
