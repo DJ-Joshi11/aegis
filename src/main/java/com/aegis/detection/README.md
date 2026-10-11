@@ -21,7 +21,7 @@ layer sitting on top of agentic AI decisions.
 3. Publishes `FlaggedDecision` as a Spring `ApplicationEvent` for the
    evidence package.
 4. **`FlaggedController`** — `GET /api/flagged`.
-5. **UI page** — `src/main/resources/templates/detection/flags.html`,
+5. **UI page** — `src/main/resources/templates/pipeline/detection.html`,
    using the shared `nav`/`footer` fragments from `templates/layout.html`.
    Flag reason and compliance status should be the first things a reviewer
    sees per row.
@@ -29,12 +29,12 @@ layer sitting on top of agentic AI decisions.
 ## Files you own
 
 - `src/main/java/com/aegis/detection/**`
-- `src/main/resources/templates/detection/**`
+- `src/main/resources/templates/pipeline/detection.html`
 - `src/test/java/com/aegis/detection/**`
 
 ## Do not touch
 
-`com.aegis.contracts`, `templates/layout.html`, `static/css/aegis.css`,
+`com.aegis.contracts`, `templates/layout.html`, `static/css/aegis-ui.css`,
 `pom.xml`, or another package's files — raise it with the team instead.
 
 ## Getting a Claude session going

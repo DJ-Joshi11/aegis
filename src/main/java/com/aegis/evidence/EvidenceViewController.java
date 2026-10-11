@@ -1,37 +1,26 @@
 package com.aegis.evidence;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.util.List;
-
 /**
- * Serves the audit evidence + exposure summary page. Separate from
- * {@link EvidenceController} (a {@code @RestController} returning JSON)
- * since this returns a Thymeleaf view name — same split ingestion used for
- * its own page. Route matches what {@code layout.html}'s shared nav already
- * links to: {@code /evidence/records}.
+ * Serves the Stage 03 · Evidence Mapping and Stage 04 · Exposure
+ * Aggregation pages. Both render client-side from {@link EvidenceController}'s
+ * JSON endpoints ({@code /api/evidence}, {@code /api/exposure-summary},
+ * {@code /api/evidence/export}) and poll for live updates, so these handlers
+ * only return the views. The old {@code /evidence/records} route still
+ * resolves.
  */
 @Controller
 public class EvidenceViewController {
 
-    private final EvidenceMappingService evidenceMappingService;
-    private final ExposureAggregationService exposureAggregationService;
-
-    public EvidenceViewController(EvidenceMappingService evidenceMappingService,
-                                   ExposureAggregationService exposureAggregationService) {
-        this.evidenceMappingService = evidenceMappingService;
-        this.exposureAggregationService = exposureAggregationService;
+    @GetMapping({"/pipeline/evidence", "/evidence/records"})
+    public String evidence() {
+        return "pipeline/evidence";
     }
 
-    @GetMapping("/evidence/records")
-    public String records(Model model) {
-        List<EvidenceController.EvidenceView> evidence = evidenceMappingService.getAllEvidence().stream()
-                .map(EvidenceController.EvidenceView::from)
-                .toList();
-        model.addAttribute("evidence", evidence);
-        model.addAttribute("exposureSummary", exposureAggregationService.getExposureSummary());
-        return "evidence/records";
+    @GetMapping("/pipeline/exposure")
+    public String exposure() {
+        return "pipeline/exposure";
     }
 }

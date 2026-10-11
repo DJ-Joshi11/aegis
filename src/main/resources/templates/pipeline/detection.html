@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{layout :: headlinks}"></th:block>
+    <title>Detection &amp; Compliance · AEGIS</title>
+    <style>
+        .rule { padding: 18px; }
+        .rule .top { display: flex; align-items: center; gap: 10px; }
+        .rule .ri { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); }
+        .rule .ri svg { width: 17px; height: 17px; }
+        .rule h3 { margin: 0; font-size: 14.5px; }
+        .rule .fired { margin-left: auto; text-align: right; }
+        .rule .fired b { font-family: var(--mono); font-size: 24px; font-weight: 600; display: block; line-height: 1; color: var(--c); }
+        .rule .fired span { font-size: 11px; color: var(--dim); }
+        .rule p { color: var(--text-2); margin: 12px 0; font-size: 12.5px; }
+        .logic { font-family: var(--mono); font-size: 11.5px; background: #08090b; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; color: var(--text-2); line-height: 1.8; }
+        .logic .kw { color: #c084fc; } .logic .v { color: #fcd34d; } .logic .s { color: #86efac; }
+
+        .whatif { display: grid; grid-template-columns: 1fr 1fr auto; gap: 18px; align-items: end; padding: 14px 16px; border-bottom: 1px solid var(--line); background: rgba(245,158,11,.03); }
+        .whatif .lab { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--dim); margin-bottom: 8px; }
+        .whatif .lab b { font-family: var(--mono); color: var(--s2); font-weight: 600; }
+        .whatif .res { text-align: right; font-size: 12px; color: var(--dim); }
+        .whatif .res b { font-family: var(--mono); font-size: 18px; color: var(--text); display: block; }
+        @media (max-width: 800px) { .whatif { grid-template-columns: 1fr; } .whatif .res { text-align: left; } }
+
+        .meter-row { display: grid; grid-template-columns: 220px 1fr 120px; gap: 14px; align-items: center; padding: 12px 16px; border-bottom: 1px solid #17181d; }
+        .meter-row:last-child { border-bottom: 0; }
+        .meter { position: relative; height: 22px; border-radius: 6px; background: #15161b; border: 1px solid var(--line); overflow: visible; }
+        .meter .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; transition: width .5s cubic-bezier(.2,.8,.2,1), background .3s; }
+        .meter .thr { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--s2); box-shadow: 0 0 10px var(--s2); transition: left .25s; }
+        .meter .thr::after { content: attr(data-l); position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 9.5px; color: var(--s2); white-space: nowrap; }
+        .meter .txt { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-size: 11px; color: var(--text); text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+        .meter-sub { font-size: 11px; color: var(--dim); margin-top: 3px; font-family: var(--mono); }
+        @media (max-width: 800px) { .meter-row { grid-template-columns: 1fr; } }
+
+        .std { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; padding: 12px 16px; border-bottom: 1px solid #17181d; cursor: pointer; transition: background .15s; }
+        .std:hover { background: #121318; }
+        .std.on { background: #15161c; box-shadow: inset 2px 0 0 var(--c); }
+        .std .nm { font-weight: 600; font-size: 12.5px; display: flex; align-items: center; gap: 8px; }
+        .std .full { grid-column: 1 / -1; color: var(--dim); font-size: 11.5px; }
+        .std .cnt { font-family: var(--mono); font-size: 16px; font-weight: 600; text-align: right; }
+        .std .bar { grid-column: 1 / -1; }
+        .pref { font-family: var(--mono); font-size: 10.5px; color: var(--dim); border: 1px solid var(--line-2); border-radius: 4px; padding: 0 5px; }
+    </style>
+</head>
+<body data-page="detection" data-crumb="02 · Detection &amp; Compliance">
+<div class="app">
+    <aside th:replace="~{layout :: sidebar}"></aside>
+    <div class="main">
+        <header th:replace="~{layout :: topbar}"></header>
+        <main class="content">
+
+            <div class="page-head">
+                <div>
+                    <div class="eyebrow"><span class="tag" style="color:var(--s2);border-color:rgba(245,158,11,.35)">Stage 02</span> audit row → flag + jurisdiction tag</div>
+                    <h1 class="page-title"><span class="accent" style="--a:var(--s2)">Detection &amp; Compliance</span></h1>
+                    <p class="page-sub">The instant a decision is persisted, two rules decide whether it needs a second look. Flagged decisions are tagged with the disclosure standard their jurisdiction calls for — a pointer for a human reviewer, never a certification that the decision passes it.</p>
+                </div>
+                <div class="head-actions">
+                    <span class="endpoint"><span class="verb get">GET</span>/api/flagged</span>
+                    <button class="btn primary" data-open-inject="fraud">Test a fraud flag</button>
+                </div>
+            </div>
+
+            <div class="grid g-4">
+                <div class="card kpi"><div class="label"><i style="background:var(--s1)"></i>Decisions reviewed</div><div class="val" id="k-rev">—</div><div class="foot">every ingested decision, synchronously</div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--s2)"></i>Flagged</div><div class="val" id="k-flag">—</div><div class="foot" id="k-flag-f">&nbsp;</div><div id="k-flag-s"></div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--s2)"></i>Flag rate</div><div class="val" id="k-rate">—</div><div class="bar mt-14" style="--c:var(--s2)"><i id="k-rate-b" style="width:0"></i></div></div>
+                <div class="card kpi"><div class="label"><i style="background:#6b7280"></i>Cleared</div><div class="val" id="k-clr">—</div><div class="foot">no rule fired · no tag needed</div></div>
+            </div>
+
+            <div class="grid g-2 mt-14">
+                <div class="card rule" style="--c:#f87171">
+                    <div class="top">
+                        <span class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h11l-2 4 2 4H5"/></svg></span>
+                        <div><div class="label">Rule 1</div><h3>Always-flag fraud referrals</h3></div>
+                        <div class="fired"><b id="r1">0</b><span>fired</span></div>
+                    </div>
+                    <p>A fraud flag means the agent itself thinks something is wrong — so it always routes to compliance review, no statistics needed.</p>
+                    <div class="logic"><span class="kw">if</span> decisionType == <span class="s">"FRAUD_FLAG"</span> <span class="kw">and</span> outcome == <span class="s">"FLAGGED"</span><br/>&nbsp;&nbsp;<span class="kw">→</span> flag, reason = <span class="s">"Fraud flag from {agent} routes to compliance review"</span></div>
+                </div>
+                <div class="card rule" style="--c:var(--s2)">
+                    <div class="top">
+                        <span class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg></span>
+                        <div><div class="label">Rule 2</div><h3>Denial-rate outlier</h3></div>
+                        <div class="fired"><b id="r2">0</b><span>fired</span></div>
+                    </div>
+                    <p>An agent that denies far more than it approves is a bias signal. Once it has enough history, each further denial above the threshold gets flagged.</p>
+                    <div class="logic"><span class="kw">if</span> outcome == <span class="s">"DENIED"</span> <span class="kw">and</span> agent.total ≥ <span class="v">5</span> <span class="kw">and</span> agent.denials / agent.total &gt; <span class="v">50%</span><br/>&nbsp;&nbsp;<span class="kw">→</span> flag, reason = <span class="s">"Denial rate for {agent} is X% over N decisions"</span></div>
+                </div>
+            </div>
+
+            <div class="grid g-wide mt-14">
+                <div class="card">
+                    <div class="card-h"><h3>Agent denial-rate monitor</h3><span class="sub">current cumulative rate per agent</span>
+                        <div class="right"><button class="btn sm ghost" id="reset-sim">Reset to production</button></div></div>
+                    <div class="whatif">
+                        <div style="--c:var(--s2)"><div class="lab"><span>What-if threshold</span><b id="thr-l">50%</b></div><input type="range" id="thr" min="10" max="90" step="5" value="50"/></div>
+                        <div style="--c:var(--s2)"><div class="lab"><span>Minimum sample</span><b id="min-l">5</b></div><input type="range" id="min" min="1" max="20" step="1" value="5"/></div>
+                        <div class="res"><b id="sim-res">—</b>agents in outlier zone</div>
+                    </div>
+                    <div id="meters"></div>
+                    <div style="padding:12px 16px;border-top:1px solid var(--line)">
+                        <div class="callout" style="--c:var(--s2)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                            <div><b>Simulation only.</b> Sliders recompute on today's data in your browser — the production rule stays at 50% over 5+ decisions (<code>aegis.detection.*</code> config).</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-h"><h3>Jurisdiction tagging</h3><span class="sub">click to filter the queue</span></div>
+                    <div id="stds"></div>
+                    <div style="padding:12px 16px">
+                        <div class="callout" style="--c:var(--info)">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8.5-8 9.5C7.4 20.5 4 17 4 12V6z"/></svg>
+                            <div><b>A tag, not a certificate.</b> AEGIS tells the reviewer <i>which</i> bar applies. Whether the decision clears it is a human call.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-14" id="queue-card">
+                <div class="card-h">
+                    <h3>Flag queue</h3><span class="sub">what a compliance reviewer works through</span>
+                    <div class="right">
+                        <div class="seg" id="rule-seg"><button data-r="" class="on">All</button><button data-r="fraud">Fraud rule</button><button data-r="outlier">Outlier rule</button></div>
+                        <span class="mini-pill" id="q-count">0</span>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="t">
+                        <thead><tr><th>Reason flagged</th><th>Rule</th><th>Compliance tag</th><th>Qusar agent</th><th>Decision</th><th>Outcome</th><th>Jurisdiction</th><th>Reviewed</th></tr></thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+<th:block th:replace="~{layout :: overlays}"></th:block>
+<script src="/js/page-detection.js"></script>
+</body>
+</html>

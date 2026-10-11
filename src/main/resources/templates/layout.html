@@ -1,28 +1,188 @@
 <!--
-  Shared Thymeleaf fragments: nav + footer.
-  OWNERSHIP: shared file — only edit together as a team, never inside a
-  single feature branch. Each page includes these via th:replace, e.g.:
-    <div th:replace="~{layout :: nav}"></div>
-    ... your page content ...
-    <div th:replace="~{layout :: footer}"></div>
+  Shared Thymeleaf fragments for the AEGIS console: head links, sidebar,
+  topbar, and the global overlays (detail drawer, "inject decision"
+  drawer, toasts, shared JS). Every page pulls these in with th:replace.
+
+  Pages identify themselves with <body data-page="..." data-crumb="...">;
+  aegis-core.js reads those to highlight the active nav item and fill the
+  breadcrumb, so these fragments need no parameters.
+
+  NOTE: avoid double-square-bracket sequences in any template — Thymeleaf
+  treats them as inline expressions.
 -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<header th:fragment="nav" class="aegis-nav">
-    <a class="aegis-brand" th:href="@{/}">AEGIS</a>
-    <nav>
-        <a th:href="@{/}">Dashboard</a>
-        <a th:href="@{/ingestion/decision-feed}">Decision Feed</a>
-        <a th:href="@{/detection/flags}">Flags &amp; Compliance</a>
-        <a th:href="@{/evidence/records}">Audit Evidence</a>
-    </nav>
+<th:block th:fragment="headlinks">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="/css/aegis-ui.css"/>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23a855f7'/%3E%3Cpath d='M16 6l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V9z' fill='%230b0c10'/%3E%3C/svg%3E"/>
+</th:block>
+
+<aside th:fragment="sidebar" class="sidebar" id="sidebar">
+    <a class="brand" href="/">
+        <span class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l8 3v6.5c0 5-3.4 9.3-8 10.5-4.6-1.2-8-5.5-8-10.5V5z"/></svg>
+        </span>
+        <span>
+            <div class="brand-name">AEGIS</div>
+            <div class="brand-sub">Exposure evidence console</div>
+        </span>
+    </a>
+
+    <a class="nav-item" data-nav="overview" href="/">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="12" r="2.2"/><path d="M7.2 6.5c5 0 4.5 5.5 9.6 5.5M7.2 17.5c5 0 4.5-5.5 9.6-5.5"/></svg>
+        Pipeline overview
+    </a>
+
+    <div class="nav-section">Pipeline stages</div>
+    <div class="pipeline-rail">
+        <a class="nav-item" data-nav="ingestion" href="/pipeline/ingestion">
+            <span class="num">01</span><span class="dot" style="background:var(--s1);color:var(--s1)"></span>
+            Ingestion <span class="badge" id="nb-ingestion">—</span>
+        </a>
+        <a class="nav-item" data-nav="detection" href="/pipeline/detection">
+            <span class="num">02</span><span class="dot" style="background:var(--s2);color:var(--s2)"></span>
+            Detection &amp; Compliance <span class="badge" id="nb-detection">—</span>
+        </a>
+        <a class="nav-item" data-nav="evidence" href="/pipeline/evidence">
+            <span class="num">03</span><span class="dot" style="background:var(--s3);color:var(--s3)"></span>
+            Evidence Mapping <span class="badge" id="nb-evidence">—</span>
+        </a>
+        <a class="nav-item" data-nav="exposure" href="/pipeline/exposure">
+            <span class="num">04</span><span class="dot" style="background:var(--s4);color:var(--s4)"></span>
+            Exposure Aggregation <span class="badge" id="nb-exposure">—</span>
+        </a>
+    </div>
+
+    <div class="nav-section">Outputs</div>
+    <a class="nav-item" href="/api/evidence/export" target="_blank" rel="noopener">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+        Audit evidence bundle
+    </a>
+    <a class="nav-item" href="/api/decisions" target="_blank" rel="noopener">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H6a2 2 0 0 0-2 2v4l-2 2 2 2v4a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2h-2"/></svg>
+        Raw decision API
+    </a>
+
+    <div class="sidebar-foot">
+        <div class="scope-mini">
+            <b>Scope.</b> AEGIS maps evidence and exposure. It does <b>not</b> certify compliance, decide coverage, or set premiums.
+        </div>
+    </div>
+</aside>
+
+<header th:fragment="topbar" class="topbar">
+    <button class="icon-btn menu-btn" id="menu-btn" aria-label="Open navigation">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="crumbs" id="crumbs"><span>AEGIS</span></div>
+    <div class="spacer"></div>
+    <button class="live-pill" id="live-pill" title="Click to pause / resume live updates">
+        <span class="pulse"></span><span id="live-text">connecting…</span>
+    </button>
+    <span id="topbar-extra"></span>
+    <button class="btn primary" id="open-inject">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="hide-sm">Inject decision</span>
+    </button>
 </header>
 
-<footer th:fragment="footer" class="aegis-footer">
-    <span>AEGIS &mdash; AI Exposure Governance &amp; Insurance Shield</span>
-</footer>
+<th:block th:fragment="overlays">
+    <div class="scrim" id="scrim"></div>
+
+    <!-- Generic detail drawer (decisions, flags, evidence, agents) -->
+    <aside class="drawer" id="drawer" aria-hidden="true">
+        <div class="drawer-h">
+            <div>
+                <div class="label" id="drawer-eyebrow">Detail</div>
+                <h2 id="drawer-title">—</h2>
+            </div>
+            <button class="icon-btn close" data-close-drawer aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+        </div>
+        <div class="drawer-b" id="drawer-body"></div>
+        <div class="drawer-f" id="drawer-foot"></div>
+    </aside>
+
+    <!-- Inject-decision drawer: posts a real decision to the backend and traces it -->
+    <aside class="drawer" id="inject" aria-hidden="true">
+        <div class="drawer-h">
+            <div>
+                <div class="label">Qusar agent simulator · POST /api/decisions</div>
+                <h2>Inject a decision into the pipeline</h2>
+            </div>
+            <button class="icon-btn close" data-close-drawer aria-label="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+        </div>
+        <div class="drawer-b">
+            <p class="muted" style="margin:0 0 14px">
+                This sends a <b style="color:var(--text)">real</b> decision to the running backend — the same code path a live Qusar feed would use.
+                Every AEGIS stage runs synchronously, so the full trace comes back in well under a second.
+            </p>
+            <div class="label" style="margin-bottom:8px">Quick scenarios</div>
+            <div class="presets">
+                <button class="preset" data-preset="fraud" style="--c:var(--cat-fr)">
+                    <b><span class="pdot"></span>Fraud flag</b>
+                    <span>Always flagged → evidence record</span>
+                </button>
+                <button class="preset" data-preset="denial" style="--c:var(--cat-cl)">
+                    <b><span class="pdot"></span>Claim denial</b>
+                    <span>Flags only if agent's denial rate is an outlier</span>
+                </button>
+                <button class="preset" data-preset="clean" style="--c:var(--ok)">
+                    <b><span class="pdot"></span>Clean approval</b>
+                    <span>Reviewed and cleared — no evidence</span>
+                </button>
+            </div>
+            <form id="inject-form" autocomplete="off">
+                <div class="row2">
+                    <div class="field">
+                        <label for="in-type">Guidewire process</label>
+                        <select id="in-type">
+                            <option value="UNDERWRITING">Underwriting · PolicyCenter</option>
+                            <option value="CLAIMS">Claim evaluation · ClaimCenter</option>
+                            <option value="FRAUD_FLAG">SIU fraud referral · ClaimCenter</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="in-agent">Qusar agent</label>
+                        <select id="in-agent"></select>
+                    </div>
+                </div>
+                <div class="row2">
+                    <div class="field">
+                        <label for="in-outcome">Outcome</label>
+                        <select id="in-outcome"></select>
+                    </div>
+                    <div class="field">
+                        <label for="in-jur">Jurisdiction</label>
+                        <select id="in-jur"></select>
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="in-reason">Reasoning trail</label>
+                    <textarea id="in-reason"></textarea>
+                </div>
+                <button class="btn primary" type="submit" id="in-submit" style="width:100%;justify-content:center;height:36px">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    Send through the pipeline
+                </button>
+            </form>
+            <div id="inject-trace"></div>
+        </div>
+    </aside>
+
+    <div class="toasts" id="toasts"></div>
+    <script src="/js/aegis-core.js"></script>
+</th:block>
 
 </body>
 </html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{layout :: headlinks}"></th:block>
+    <title>Ingestion · AEGIS</title>
+    <style>
+        .schema { display: grid; gap: 0; }
+        .schema .f { display: grid; grid-template-columns: 130px 70px 1fr; gap: 10px; align-items: center; padding: 9px 16px; border-bottom: 1px solid #17181d; font-size: 12.5px; }
+        .schema .f:last-child { border-bottom: 0; }
+        .schema .f code { color: #c4b5fd; font-size: 12px; }
+        .schema .f .ty { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+        .schema .f .ex { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); font-size: 11.5px; }
+        .hbar { display: grid; grid-template-columns: 210px 1fr 40px; gap: 10px; align-items: center; padding: 6px 0; }
+        .hbar .n { font-family: var(--mono); font-size: 12px; text-align: right; color: var(--text-2); }
+        .jur-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-top: 14px; }
+        .jur { border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px; background: var(--panel-2); cursor: pointer; transition: border-color .15s; }
+        .jur:hover, .jur.on { border-color: var(--s1); }
+        .jur b { font-family: var(--mono); font-size: 12px; display: block; }
+        .jur span { font-size: 11px; color: var(--dim); }
+        .minibars { display: flex; align-items: flex-end; gap: 3px; height: 34px; margin-top: 10px; }
+        .minibars i { flex: 1; background: var(--s1); border-radius: 2px 2px 0 0; opacity: .85; min-height: 2px; transition: height .4s; }
+    </style>
+</head>
+<body data-page="ingestion" data-crumb="01 · Ingestion">
+<div class="app">
+    <aside th:replace="~{layout :: sidebar}"></aside>
+    <div class="main">
+        <header th:replace="~{layout :: topbar}"></header>
+        <main class="content">
+
+            <div class="page-head">
+                <div>
+                    <div class="eyebrow"><span class="tag" style="color:var(--s1);border-color:rgba(34,211,238,.35)">Stage 01</span> Qusar decision → audit row</div>
+                    <h1 class="page-title"><span class="accent" style="--a:var(--s1)">Ingestion</span></h1>
+                    <p class="page-sub">Every decision a Qusar agent makes lands here first. AEGIS validates it, persists an immutable audit row that lives outside the agent's own logs, and publishes it to detection — synchronously, in the same request.</p>
+                </div>
+                <div class="head-actions">
+                    <span class="endpoint"><span class="verb">POST</span>/api/decisions</span>
+                    <button class="btn primary" data-open-inject="">Inject decision</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="steps" style="--c:var(--s1)">
+                    <div class="step"><div class="n">01 · RECEIVE</div><b>Decision event arrives</b><p>From a live Qusar feed or the mock generator — same endpoint, same <code>DecisionEvent</code> shape.</p><span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 6l6 6-6 6"/></svg></span></div>
+                    <div class="step"><div class="n">02 · VALIDATE</div><b>Normalise &amp; check</b><p>Trims fields, fills a UUID / timestamp if blank, requires agent, type, outcome, jurisdiction, reasoning.</p><span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 6l6 6-6 6"/></svg></span></div>
+                    <div class="step"><div class="n">03 · PERSIST</div><b>Immutable audit row</b><p>Saved to <code>decision_audit</code>. A duplicate decision ID is rejected with a 400 — nothing gets logged twice.</p><span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 6l6 6-6 6"/></svg></span></div>
+                    <div class="step"><div class="n">04 · PUBLISH</div><b>Hand off to detection</b><p>Published as an in-process Spring event. Detection and evidence mapping react before the HTTP response returns.</p></div>
+                </div>
+            </div>
+
+            <div class="grid g-4 mt-14">
+                <div class="card kpi"><div class="label"><i style="background:var(--s1)"></i>Decisions logged</div><div class="val" id="k-total">—</div><div class="foot" id="k-total-f">&nbsp;</div><div id="k-total-s"></div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--s1)"></i>Throughput · last 15 min</div><div class="val" id="k-rate">—<small>/min</small></div><div class="minibars" id="k-bars"></div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--qsr)"></i>Decision mix</div><div class="val" id="k-mix" style="font-size:15px;margin-top:10px">—</div><div class="stack" id="k-mix-s" style="margin-top:12px"></div><div class="foot" id="k-mix-f">&nbsp;</div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--gw)"></i>Guidewire sources</div><div class="val" id="k-src" style="font-size:15px;margin-top:10px">—</div><div class="foot" id="k-src-f">&nbsp;</div></div>
+            </div>
+
+            <div class="card mt-14">
+                <div class="card-h">
+                    <h3>Audit log</h3><span class="sub">every ingested decision · click a row for its full trace</span>
+                    <div class="right"><span class="mini-pill" id="in-view">0 in view</span></div>
+                </div>
+                <div class="toolbar">
+                    <input class="search" id="q" placeholder="Search id, agent, reasoning…"/>
+                    <label class="filter"><span>Type</span><select class="select" id="f-type"><option value="">Any</option><option value="UNDERWRITING">Underwriting</option><option value="CLAIMS">Claims</option><option value="FRAUD_FLAG">Fraud flag</option></select></label>
+                    <label class="filter"><span>Agent</span><select class="select" id="f-agent"><option value="">All agents</option></select></label>
+                    <label class="filter"><span>Outcome</span><select class="select" id="f-outcome"><option value="">Any</option></select></label>
+                    <label class="filter"><span>Status</span><select class="select" id="f-status"><option value="">Any</option><option value="evidence">Evidence recorded</option><option value="flagged">Flagged</option><option value="cleared">Cleared</option></select></label>
+                    <div class="spacer"></div>
+                    <button class="btn sm ghost" id="clear">Clear filters</button>
+                </div>
+                <div class="table-wrap">
+                    <table class="t">
+                        <thead><tr>
+                            <th class="sortable" data-sort="timestamp">Time <span class="arr">▼</span></th>
+                            <th>Decision</th>
+                            <th class="sortable" data-sort="agentId">Qusar agent <span class="arr"></span></th>
+                            <th>Source</th>
+                            <th class="sortable" data-sort="decisionType">Type <span class="arr"></span></th>
+                            <th class="sortable" data-sort="outcome">Outcome <span class="arr"></span></th>
+                            <th class="sortable" data-sort="jurisdiction">Jurisdiction <span class="arr"></span></th>
+                            <th title="Ingested · Detection · Evidence · Exposure">Pipeline</th>
+                            <th>Status</th>
+                        </tr></thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+                <div class="table-foot" id="foot"></div>
+            </div>
+
+            <div class="grid g-2 mt-14">
+                <div class="card">
+                    <div class="card-h"><h3>Decision event contract</h3><span class="sub">what a Qusar feed must send</span><div class="right"><span class="mini-pill">com.aegis.contracts.DecisionEvent</span></div></div>
+                    <div class="schema" id="schema"></div>
+                </div>
+                <div class="card">
+                    <div class="card-h"><h3>Volume by agent &amp; jurisdiction</h3><span class="sub">click a jurisdiction to filter</span></div>
+                    <div class="card-b">
+                        <div id="by-agent"></div>
+                        <div class="jur-grid" id="by-jur"></div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+<th:block th:replace="~{layout :: overlays}"></th:block>
+<script src="/js/page-ingestion.js"></script>
+</body>
+</html>

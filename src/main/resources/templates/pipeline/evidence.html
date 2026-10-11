@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{layout :: headlinks}"></th:block>
+    <title>Evidence Mapping · AEGIS</title>
+    <style>
+        .map { padding: 18px 18px 8px; }
+        .map-row { display: grid; grid-template-columns: 170px 1fr 260px; align-items: center; gap: 0; margin-bottom: 12px; cursor: pointer; }
+        .map-row .src { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel-2); }
+        .map-row .src .t { font-weight: 600; font-size: 12.5px; }
+        .map-row .src .p { font-family: var(--mono); font-size: 10.5px; color: var(--dim); }
+        .wire { position: relative; height: 2px; margin: 0 10px; background: #23252d; border-radius: 2px; }
+        .wire .flow { position: absolute; inset: 0; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--c) 0 6px, transparent 6px 14px); opacity: .9; animation: slide 1.1s linear infinite; }
+        .wire.idle .flow { opacity: .15; animation: none; }
+        .wire::after { content: ""; position: absolute; right: -4px; top: 50%; width: 8px; height: 8px; border-top: 2px solid var(--c); border-right: 2px solid var(--c); transform: translateY(-50%) rotate(45deg); }
+        .wire .lbl { position: absolute; left: 50%; top: -18px; transform: translateX(-50%); font-family: var(--mono); font-size: 10px; color: var(--dim); white-space: nowrap; background: var(--panel); padding: 0 6px; }
+        @keyframes slide { to { background-position: 14px 0; } }
+        .map-row .dst { padding: 10px 12px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); background: color-mix(in srgb, var(--c) 7%, var(--panel)); transition: box-shadow .2s, transform .2s; }
+        .map-row:hover .dst, .map-row.on .dst { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 20%, transparent); }
+        .map-row.on .dst { transform: translateX(-2px); }
+        .map-row .dst .top { display: flex; justify-content: space-between; align-items: baseline; }
+        .map-row .dst b { font-size: 12.5px; }
+        .map-row .dst .n { font-family: var(--mono); font-size: 18px; font-weight: 600; color: var(--c); }
+        .map-row .dst .bar { margin-top: 6px; }
+        @media (max-width: 800px) { .map-row { grid-template-columns: 1fr; gap: 8px; } .wire { display: none; } }
+
+        .trigger { padding: 16px; border-bottom: 1px solid var(--line); }
+        .trigger:last-child { border-bottom: 0; }
+        .trigger .h { display: flex; align-items: center; gap: 10px; }
+        .trigger .h b { font-size: 13px; }
+        .trigger .h .n { margin-left: auto; font-family: var(--mono); font-size: 20px; font-weight: 600; color: var(--c); }
+        .trigger p { margin: 8px 0 0; color: var(--text-2); font-size: 12.5px; }
+        .clock { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+        .clock .track2 { flex: 1; position: relative; height: 8px; border-radius: 8px; background: #1c1e25; overflow: hidden; }
+        .clock .track2 i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #f472b6, #f87171); animation: fill 4.5s linear infinite; }
+        .clock .track2 .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #fff; opacity: .6; }
+        @keyframes fill { from { width: 0; } to { width: 100%; } }
+        .clock span { font-family: var(--mono); font-size: 10.5px; color: var(--dim); white-space: nowrap; }
+
+        .anat { display: grid; grid-template-columns: 150px 1fr; gap: 0; }
+        .anat .k { padding: 10px 16px; border-bottom: 1px solid #17181d; font-family: var(--mono); font-size: 11.5px; color: #c4b5fd; }
+        .anat .v { padding: 10px 16px; border-bottom: 1px solid #17181d; font-size: 12.5px; min-width: 0; }
+        .anat .v .why { display: block; color: var(--dim); font-size: 11.5px; margin-top: 2px; }
+    </style>
+</head>
+<body data-page="evidence" data-crumb="03 · Evidence Mapping">
+<div class="app">
+    <aside th:replace="~{layout :: sidebar}"></aside>
+    <div class="main">
+        <header th:replace="~{layout :: topbar}"></header>
+        <main class="content">
+
+            <div class="page-head">
+                <div>
+                    <div class="eyebrow"><span class="tag" style="color:var(--s3);border-color:rgba(244,114,182,.35)">Stage 03</span> flag → exposure-categorised evidence</div>
+                    <h1 class="page-title"><span class="accent" style="--a:var(--s3)">Evidence Mapping</span></h1>
+                    <p class="page-sub">Every decision that needed a second look becomes an audit evidence record, mapped to a broad insurance exposure category. No money moves and no coverage call is made — this is evidence for a human reviewer.</p>
+                </div>
+                <div class="head-actions">
+                    <span class="endpoint"><span class="verb get">GET</span>/api/evidence</span>
+                    <a class="btn" href="/api/evidence/export" target="_blank" rel="noopener">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export bundle</a>
+                    <button class="btn primary" data-open-inject="fraud">Create evidence</button>
+                </div>
+            </div>
+
+            <div class="grid g-4">
+                <div class="card kpi"><div class="label"><i style="background:var(--s3)"></i>Evidence records</div><div class="val" id="k-ev">—</div><div class="foot" id="k-ev-f">&nbsp;</div><div id="k-ev-s"></div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--s2)"></i>From detection flags</div><div class="val" id="k-fl">—</div><div class="foot">recorded the instant a rule fired</div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--bad)"></i>Control gaps</div><div class="val" id="k-gap">—</div><div class="foot">no review inside 45s window</div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--ok)"></i>Flag coverage</div><div class="val" id="k-cov">—</div><div class="foot">flagged decisions with evidence</div></div>
+            </div>
+
+            <div class="grid g-wide mt-14">
+                <div class="card">
+                    <div class="card-h"><h3>Category mapping</h3><span class="sub">decision type → exposure category · click to filter</span><div class="right"><button class="btn sm ghost" id="clear-cat">Show all</button></div></div>
+                    <div class="map" id="map"></div>
+                    <div style="padding:0 18px 16px"><div class="callout" style="--c:var(--s3)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                        <div><b>Categorisation, not classification.</b> These are broad exposure buckets for a reviewer — not a legal or actuarial determination of what's covered.</div></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-h"><h3>Two ways evidence gets created</h3></div>
+                    <div class="trigger" style="--c:var(--s2)">
+                        <div class="h"><span class="chip" style="--c:var(--s2)"><span class="d"></span>Trigger A</span><b>Detection flag</b><span class="n" id="t-a">0</span></div>
+                        <p>Detection publishes a flagged decision; the evidence mapper records it immediately with its category and the reason it was flagged.</p>
+                    </div>
+                    <div class="trigger" style="--c:var(--bad)">
+                        <div class="h"><span class="chip" style="--c:var(--bad)"><span class="d"></span>Trigger B</span><b>Review-gap sweep</b><span class="n" id="t-b">0</span></div>
+                        <p>Safety net: every 10s a sweep finds decisions still unresolved after the 45s review window and records them as a <b>control gap</b> — so a slow or failed review never leaves a decision without a trail.</p>
+                        <div class="clock"><span>0s</span><div class="track2"><i></i></div><span>45s → gap</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-14" id="rec-card">
+                <div class="card-h">
+                    <h3>Evidence records</h3><span class="sub" id="rec-sub">newest first · click to inspect</span>
+                    <div class="right">
+                        <div class="seg" id="src-seg"><button data-s="" class="on">All</button><button data-s="flag">Flagged</button><button data-s="gap">Control gap</button></div>
+                        <span class="mini-pill" id="rec-count">0</span>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="t">
+                        <thead><tr><th>Exposure category</th><th>Source</th><th>Reason</th><th>Qusar agent</th><th>Decision</th><th>Compliance tag</th><th>Recorded</th></tr></thead>
+                        <tbody id="rows"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid g-2 mt-14">
+                <div class="card">
+                    <div class="card-h"><h3>Anatomy of an evidence record</h3><span class="sub">latest record, field by field</span></div>
+                    <div class="anat" id="anat"></div>
+                </div>
+                <div class="card">
+                    <div class="card-h"><h3>Category × source</h3><span class="sub">where evidence is coming from</span></div>
+                    <div class="table-wrap">
+                        <table class="t">
+                            <thead><tr><th>Category</th><th class="num">Flagged</th><th class="num">Gaps</th><th class="num">Total</th><th style="width:30%">Share</th></tr></thead>
+                            <tbody id="xtab"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+<th:block th:replace="~{layout :: overlays}"></th:block>
+<script src="/js/page-evidence.js"></script>
+</body>
+</html>

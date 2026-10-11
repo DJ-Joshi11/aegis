@@ -1,27 +1,22 @@
 package com.aegis.ingestion;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
- * Serves the decision-feed page. Separate from {@link DecisionController}
- * (which is a {@code @RestController} returning JSON) since this returns a
- * Thymeleaf view name instead. Route matches what {@code layout.html}'s
- * shared nav already links to: {@code /ingestion/decision-feed}.
+ * Serves the Stage 01 · Ingestion page. The page is a client-side console:
+ * it renders from {@link DecisionController}'s {@code /api/decisions} (plus
+ * the other stages' APIs for each decision's pipeline trace) and polls for
+ * live updates, so this controller only needs to return the view.
+ *
+ * The old {@code /ingestion/decision-feed} route still resolves, so any
+ * existing links keep working.
  */
 @Controller
 public class DecisionFeedViewController {
 
-    private final DecisionIngestionService ingestionService;
-
-    public DecisionFeedViewController(DecisionIngestionService ingestionService) {
-        this.ingestionService = ingestionService;
-    }
-
-    @GetMapping("/ingestion/decision-feed")
-    public String decisionFeed(Model model) {
-        model.addAttribute("decisions", ingestionService.getAllDecisions());
-        return "ingestion/decision-feed";
+    @GetMapping({"/pipeline/ingestion", "/ingestion/decision-feed"})
+    public String ingestion() {
+        return "pipeline/ingestion";
     }
 }

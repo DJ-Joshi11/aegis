@@ -18,7 +18,7 @@ agent's decision-log event) and turn them into a clean, published
    persists it (JPA + H2) as the audit log, and publishes it as a Spring
    `ApplicationEvent` for the detection package.
 3. **`DecisionController`** — `POST /api/decisions`, `GET /api/decisions`.
-4. **UI page** — `src/main/resources/templates/ingestion/decision-feed.html`,
+4. **UI page** — `src/main/resources/templates/pipeline/ingestion.html`,
    using the shared `nav`/`footer` fragments from `templates/layout.html`
    (`th:replace="~{layout :: nav}"` / `~{layout :: footer}`). Shows a live
    table of incoming decisions: id, agent, type, outcome, jurisdiction, time.
@@ -26,12 +26,12 @@ agent's decision-log event) and turn them into a clean, published
 ## Files you own
 
 - `src/main/java/com/aegis/ingestion/**`
-- `src/main/resources/templates/ingestion/**`
+- `src/main/resources/templates/pipeline/ingestion.html`
 - `src/test/java/com/aegis/ingestion/**`
 
 ## Do not touch
 
-`com.aegis.contracts`, `templates/layout.html`, `static/css/aegis.css`,
+`com.aegis.contracts`, `templates/layout.html`, `static/css/aegis-ui.css`,
 `pom.xml`, or another package's files — raise it with the team instead.
 
 ## Getting a Claude session going

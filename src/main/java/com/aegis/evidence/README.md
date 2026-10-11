@@ -35,7 +35,7 @@ on.
    class so there's no route clash). Pulls a summary across all three
    slices (call their REST endpoints, or read shared H2 tables directly —
    whichever is simpler given the timeline).
-5. **UI pages** — `templates/evidence/records.html` (evidence list +
+5. **UI pages** — `templates/pipeline/evidence.html + exposure.html` (evidence list +
    exposure summary, with an "Export audit evidence" link) and
    `templates/dashboard.html` (the landing page: recent decisions, flagged
    count, evidence records, current exposure summary — make the end-to-end
@@ -46,7 +46,7 @@ on.
 ## Files you own
 
 - `src/main/java/com/aegis/evidence/**`
-- `src/main/resources/templates/evidence/**`
+- `src/main/resources/templates/pipeline/evidence.html`, `src/main/resources/templates/pipeline/exposure.html`
 - `src/main/resources/templates/dashboard.html`
 - `src/test/java/com/aegis/evidence/**`
 - `src/main/java/com/aegis/HomeController.java` (delete it once your
@@ -54,7 +54,7 @@ on.
 
 ## Do not touch
 
-`com.aegis.contracts`, `templates/layout.html`, `static/css/aegis.css`,
+`com.aegis.contracts`, `templates/layout.html`, `static/css/aegis-ui.css`,
 `pom.xml`, or another package's own files — raise it with the team instead.
 
 ## Getting a Claude session going

@@ -21,9 +21,9 @@ Build, in order:
 1. MockDecisionGenerator — a scheduled job or POST /api/decisions endpoint creating sample AI-agent decisions shaped like what Guidewire's Qusar agentic framework would emit (underwriting/claims/fraud-flag decisions, plausible agentIds/decisionTypes/jurisdictions). We don't have real Qusar sandbox access, so this mock stands in for it.
 2. DecisionIngestionService — validates an incoming DecisionEvent, saves it to an audit-log table (JPA + H2), publishes it as a Spring ApplicationEvent.
 3. DecisionController — POST /api/decisions, GET /api/decisions.
-4. UI page: templates/ingestion/decision-feed.html, using the shared nav/footer fragments from templates/layout.html (th:replace="~{layout :: nav}" and ~{layout :: footer}). A live table of incoming decisions.
+4. UI page: templates/pipeline/ingestion.html, using the shared nav/footer fragments from templates/layout.html (th:replace="~{layout :: nav}" and ~{layout :: footer}). A live table of incoming decisions.
 
-Guardrail: only create/edit files under src/main/java/com/aegis/ingestion/**, src/main/resources/templates/ingestion/**, and my own test files. Never edit com.aegis.contracts, layout.html, aegis.css, pom.xml, or another package's files — flag it to me instead so we change it together.
+Guardrail: only create/edit files under src/main/java/com/aegis/ingestion/**, src/main/resources/templates/pipeline/ingestion.html, and my own test files. Never edit com.aegis.contracts, layout.html, aegis.css, pom.xml, or another package's files — flag it to me instead so we change it together.
 
 Build me this package, service-first then the REST layer then the UI page, with a couple of unit tests for DecisionIngestionService.
 ```
@@ -46,9 +46,9 @@ Build, in order:
 2. ComplianceRulesService — for a flagged decision, looks up what that jurisdiction requires (a simple table: jurisdiction -> standard, e.g. EU -> "EU AI Act Art.14 explainability", India -> "IRDAI disclosure", US -> "state AI disclosure rule") and sets complianceStatus.
 3. Publishes FlaggedDecision as a Spring ApplicationEvent.
 4. FlaggedController — GET /api/flagged.
-5. UI page: templates/detection/flags.html, using the shared nav/footer fragments from templates/layout.html. Flag reason and compliance status should be the first things a reviewer sees per row — this is our strongest "novel" pitch point.
+5. UI page: templates/pipeline/detection.html, using the shared nav/footer fragments from templates/layout.html. Flag reason and compliance status should be the first things a reviewer sees per row — this is our strongest "novel" pitch point.
 
-Guardrail: only create/edit files under src/main/java/com/aegis/detection/**, src/main/resources/templates/detection/**, and my own test files. Never edit com.aegis.contracts, layout.html, aegis.css, pom.xml, or another package's files — flag it to me instead so we change it together.
+Guardrail: only create/edit files under src/main/java/com/aegis/detection/**, src/main/resources/templates/pipeline/detection.html, and my own test files. Never edit com.aegis.contracts, layout.html, aegis.css, pom.xml, or another package's files — flag it to me instead so we change it together.
 
 Build me this package, service-first then the REST layer then the UI page, with a couple of unit tests for AnomalyDetectionService covering a clearly-fine decision and a clearly-flagged one.
 ```
@@ -71,9 +71,9 @@ Build, in order:
 1. EvidenceMappingService — listens for FlaggedDecision via @EventListener; if flagged is true (or a review window, e.g. 48h, passes with no resolution), maps the decision type to a broad exposure category (UNDERWRITING -> Underwriting Risk Exposure, CLAIMS -> Claims Handling Exposure, FRAUD_FLAG -> Fraud & Integrity Exposure), records an evidence row, publishes an ExposureEvidenceRecord.
 2. ExposureAggregationService — keeps a running "evidence rate" and dominant exposure category per agentId from the outcomes EvidenceMappingService reports. Simple math is fine — it's informational only, never a premium or coverage figure.
 3. EvidenceController + DashboardController — GET /api/evidence, GET /api/exposure-summary, GET /api/evidence/export (a downloadable audit bundle), and the "/" route (replace the day-0 com.aegis.HomeController placeholder once this exists — delete that class). Pull a summary across all three slices for the dashboard (call the other REST endpoints, or read shared H2 tables directly — whichever is simpler given the timeline).
-4. UI pages: templates/evidence/records.html (evidence list + exposure summary + export link) and templates/dashboard.html (the landing page — recent decisions, flagged count, evidence records, current exposure summary; make decision -> flag -> evidence -> exposure category visually obvious, without ever implying a payout or a price was set). Both use the shared nav/footer fragments from templates/layout.html.
+4. UI pages: templates/pipeline/evidence.html + exposure.html (evidence list + exposure summary + export link) and templates/dashboard.html (the landing page — recent decisions, flagged count, evidence records, current exposure summary; make decision -> flag -> evidence -> exposure category visually obvious, without ever implying a payout or a price was set). Both use the shared nav/footer fragments from templates/layout.html.
 
-Guardrail: only create/edit files under src/main/java/com/aegis/evidence/**, src/main/resources/templates/evidence/**, templates/dashboard.html, com/aegis/HomeController.java, and my own test files. Never edit com.aegis.contracts, layout.html, aegis.css, pom.xml, or another package's own files — flag it to me instead so we change it together.
+Guardrail: only create/edit files under src/main/java/com/aegis/evidence/**, src/main/resources/templates/pipeline/evidence.html`, `src/main/resources/templates/pipeline/exposure.html, templates/dashboard.html, com/aegis/HomeController.java, and my own test files. Never edit com.aegis.contracts, layout.html, aegis.css, pom.xml, or another package's own files — flag it to me instead so we change it together.
 
 Build me this package, service-first then the REST layer then the UI pages, with a couple of unit tests for EvidenceMappingService covering a review-gap case and a clean case.
 ```
