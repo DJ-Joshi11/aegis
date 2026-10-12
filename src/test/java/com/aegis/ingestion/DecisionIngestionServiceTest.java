@@ -120,6 +120,7 @@ class DecisionIngestionServiceTest {
                 "dec-003", "qsr-fraud-agent-03", "FRAUD_FLAG", "FLAGGED",
                 Instant.parse("2026-09-25T09:00:00Z"), "IN-MH",
                 "Claim filed 2 days after policy inception; flagged for SIU review.",
+                "WORKERS_COMP", 18000.0, 0.74,
                 Instant.now()
         );
         when(repository.findAllByOrderByTimestampDesc()).thenReturn(List.of(audit));
@@ -129,5 +130,8 @@ class DecisionIngestionServiceTest {
         assertThat(results).hasSize(1);
         assertThat(results.get(0).decisionId()).isEqualTo("dec-003");
         assertThat(results.get(0).jurisdiction()).isEqualTo("IN-MH");
+        assertThat(results.get(0).lineOfBusiness()).isEqualTo("WORKERS_COMP");
+        assertThat(results.get(0).amount()).isEqualTo(18000.0);
+        assertThat(results.get(0).confidence()).isEqualTo(0.74);
     }
 }
