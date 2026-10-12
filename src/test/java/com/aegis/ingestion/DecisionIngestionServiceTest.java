@@ -49,8 +49,8 @@ class DecisionIngestionServiceTest {
                 "APPROVED",
                 Instant.parse("2026-09-25T10:00:00Z"),
                 "US-CA",
-                "Risk score 0.42, within appetite; auto-approved."
-        );
+                "Risk score 0.42, within appetite; auto-approved.",
+                null, null, null);
     }
 
     @Test
@@ -76,8 +76,8 @@ class DecisionIngestionServiceTest {
     void ingest_generatesDecisionIdAndTimestampWhenMissing() {
         DecisionEvent decision = new DecisionEvent(
                 null, "qsr-claims-agent-02", "CLAIMS", "APPROVED",
-                null, "EU-DE", "Damage estimate consistent with photos; approved."
-        );
+                null, "EU-DE", "Damage estimate consistent with photos; approved.",
+                null, null, null);
         when(repository.existsById(any())).thenReturn(false);
 
         DecisionEvent result = service.ingest(decision);
@@ -90,8 +90,8 @@ class DecisionIngestionServiceTest {
     void ingest_rejectsDecisionMissingRequiredField() {
         DecisionEvent missingAgentId = new DecisionEvent(
                 "dec-002", " ", "CLAIMS", "APPROVED",
-                Instant.now(), "US-NY", "Some reasoning."
-        );
+                Instant.now(), "US-NY", "Some reasoning.",
+                null, null, null);
 
         assertThatThrownBy(() -> service.ingest(missingAgentId))
                 .isInstanceOf(DecisionValidationException.class)

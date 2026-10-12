@@ -51,7 +51,8 @@ class EvidenceMappingServiceTest {
 
     private DecisionEvent decision(String id, String agentId) {
         return new DecisionEvent(id, agentId, "CLAIMS", "DENIED",
-                Instant.now(), "US-CA", "Loss occurred after policy lapse; denied.");
+                Instant.now(), "US-CA", "Loss occurred after policy lapse; denied.",
+                null, null, null);
     }
 
     @Test

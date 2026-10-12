@@ -69,6 +69,28 @@
 
     A.JURISDICTIONS = ['US-CA', 'US-NY', 'US-TX', 'EU-DE', 'EU-FR', 'IN-MH', 'UK-LON'];
 
+    /** Guidewire lines of business the simulated agents work in (optional decision field). */
+    A.LOBS = {
+        PERSONAL_AUTO: { label: 'Personal auto', hex: '#60a5fa' },
+        HOMEOWNERS: { label: 'Homeowners', hex: '#34d399' },
+        COMMERCIAL_PROPERTY: { label: 'Commercial property', hex: '#fbbf24' },
+        WORKERS_COMP: { label: "Workers' comp", hex: '#f472b6' },
+        UNSPECIFIED: { label: 'Unspecified', hex: '#a1a1aa' }
+    };
+    A.lobOf = function (l) { return A.LOBS[l] || { label: l ? String(l).replace(/_/g, ' ').toLowerCase() : '—', hex: '#a1a1aa' }; };
+    A.lobChip = function (l) { var x = A.lobOf(l); return A.chip(x.label, x.hex); };
+    A.money = function (v) {
+        if (v == null || isNaN(v)) return '—';
+        if (v >= 1e6) return '$' + (v / 1e6).toFixed(v >= 1e7 ? 0 : 1) + 'M';
+        if (v >= 1e3) return '$' + (v / 1e3).toFixed(v >= 1e5 ? 0 : 1).replace(/\.0$/, '') + 'K';
+        return '$' + Math.round(v);
+    };
+    var LOB_BY_TYPE = {
+        UNDERWRITING: ['HOMEOWNERS', 'PERSONAL_AUTO', 'COMMERCIAL_PROPERTY'],
+        CLAIMS: ['PERSONAL_AUTO', 'HOMEOWNERS', 'COMMERCIAL_PROPERTY', 'WORKERS_COMP'],
+        FRAUD_FLAG: ['PERSONAL_AUTO', 'HOMEOWNERS', 'WORKERS_COMP']
+    };
+
     /** Mirrors ComplianceRulesService.requiredStandardFor — display only. */
     A.STANDARDS = [
         { prefix: 'EU-', name: 'EU AI Act Art.14', full: 'EU AI Act Art.14 — human oversight & explainability', hex: '#818cf8' },
@@ -395,6 +417,9 @@
             '<dt>Decision ID</dt><dd class="mono" style="font-size:11.5px">' + A.esc(d.decisionId) + '</dd>' +
             '<dt>Qusar agent</dt><dd>' + A.agentHtml(d.agentId) + '</dd>' +
             '<dt>Guidewire source</dt><dd>' + A.productChip(d.decisionType) + '</dd>' +
+            (d.lineOfBusiness ? '<dt>Line of business</dt><dd>' + A.lobChip(d.lineOfBusiness) + '</dd>' : '') +
+            (d.amount != null ? '<dt>' + (d.decisionType === 'UNDERWRITING' ? 'Sum insured' : 'Claim amount') + '</dt><dd class="mono">' + A.esc('$' + Math.round(d.amount).toLocaleString()) + '</dd>' : '') +
+            (d.confidence != null ? '<dt>Agent confidence</dt><dd class="mono">' + A.esc(d.confidence.toFixed(2)) + (d.confidence < 0.6 ? ' <span class="muted">· below 0.60</span>' : '') + '</dd>' : '') +
             '<dt>Decided at</dt><dd class="mono">' + A.esc(new Date(d.timestamp).toLocaleString()) + ' <span class="muted">(' + A.ago(d.timestamp) + ')</span></dd>' +
             '<dt>Compliance tag</dt><dd>' + (A.store.flagById[id] ? A.stdChip(d.jurisdiction) : '<span class="muted">Not required — cleared</span>') + '</dd>' +
             '<dt>Exposure category</dt><dd>' + (A.store.evById[id] ? A.catChip(A.store.evById[id].exposureCategory) : '<span class="muted">— (no evidence) · would map to ' + A.esc(A.catOf(t.category).short) + '</span>') + '</dd>' +
@@ -426,6 +451,15 @@
         var agent = A.$('#in-agent').value, outcome = A.$('#in-outcome').value;
         fillSelect(A.$('#in-agent'), o.agents);
         fillSelect(A.$('#in-outcome'), o.outcomes, function (v) { return v.replace(/_/g, ' '); });
+        var lob = A.$('#in-lob');
+        if (lob) {
+            var prevLob = lob.value;
+            fillSelect(lob, LOB_BY_TYPE[type] || Object.keys(A.LOBS), function (v) { return A.lobOf(v).label; });
+            if (keepAgentOutcome && (LOB_BY_TYPE[type] || []).indexOf(prevLob) >= 0) lob.value = prevLob;
+            A.$('#in-amount-l').textContent = type === 'UNDERWRITING' ? 'Sum insured (USD)' : 'Claim amount (USD)';
+            if (!keepAgentOutcome || !A.$('#in-amount').value) A.$('#in-amount').value = type === 'UNDERWRITING' ? 350000 : 12000;
+            if (!A.$('#in-conf').value) A.$('#in-conf').value = '0.85';
+        }
         if (keepAgentOutcome) {
             if (o.agents.indexOf(agent) >= 0) A.$('#in-agent').value = agent;
             if (o.outcomes.indexOf(outcome) >= 0) A.$('#in-outcome').value = outcome;
@@ -437,9 +471,9 @@
         A.$('#in-reason').value = o.reasons[A.$('#in-outcome').value] || '';
     }
     var PRESETS = {
-        fraud: { type: 'FRAUD_FLAG', agent: 'qsr-fraud-agent-03', outcome: 'FLAGGED', jur: 'EU-DE' },
-        denial: { type: 'CLAIMS', agent: 'qsr-claims-agent-02', outcome: 'DENIED', jur: 'US-NY' },
-        clean: { type: 'UNDERWRITING', agent: 'qsr-underwriting-agent-01', outcome: 'APPROVED', jur: 'IN-MH' }
+        fraud: { type: 'FRAUD_FLAG', agent: 'qsr-fraud-agent-03', outcome: 'FLAGGED', jur: 'EU-DE', lob: 'WORKERS_COMP', amount: 38000, conf: 0.71 },
+        denial: { type: 'CLAIMS', agent: 'qsr-claims-agent-02', outcome: 'DENIED', jur: 'US-NY', lob: 'HOMEOWNERS', amount: 18500, conf: 0.88 },
+        clean: { type: 'UNDERWRITING', agent: 'qsr-underwriting-agent-01', outcome: 'APPROVED', jur: 'IN-MH', lob: 'PERSONAL_AUTO', amount: 32000, conf: 0.9 }
     };
     A.openInject = function (preset) {
         A.$('#inject-trace').innerHTML = '';
@@ -453,6 +487,7 @@
         A.$('#in-agent').value = p.agent;
         A.$('#in-outcome').value = p.outcome;
         A.$('#in-jur').value = p.jur;
+        if (A.$('#in-lob')) { A.$('#in-lob').value = p.lob; A.$('#in-amount').value = p.amount; A.$('#in-conf').value = p.conf; }
         syncReason();
     }
 
@@ -467,6 +502,12 @@
             jurisdiction: A.$('#in-jur').value,
             reasoningTrail: A.$('#in-reason').value
         };
+        if (A.$('#in-lob')) {
+            payload.lineOfBusiness = A.$('#in-lob').value || null;
+            var amt = parseFloat(A.$('#in-amount').value), conf = parseFloat(A.$('#in-conf').value);
+            if (!isNaN(amt)) payload.amount = amt;
+            if (!isNaN(conf)) payload.confidence = conf;
+        }
         var started = performance.now();
         A.$('#inject-trace').innerHTML = '<div class="section-label label">Live trace</div>' +
             A.timelineHtml([{ state: 'pending', hex: A.STAGES.ingestion.hex, title: 'POST /api/decisions', detail: 'Sending to the backend…' }]);
@@ -494,6 +535,48 @@
         }).finally(function () { btn.disabled = false; });
     }
 
+    /* ------------------------------------------------------------ analytics badge */
+    function refreshInsightsBadge() {
+        var b = document.getElementById('nb-insights');
+        if (!b) return;
+        safe('/api/insights').then(function (r) {
+            if (!r || !r.summary) return;
+            var n = r.summary.highFindings;
+            b.textContent = n;
+            b.title = n + ' high-severity insight' + (n === 1 ? '' : 's');
+            b.classList.toggle('hot', n > 0);
+        });
+    }
+    A.refreshInsightsBadge = refreshInsightsBadge;
+
+    /* ------------------------------------------------------------ chart tooltip */
+    /** Any element with data-tip (pre-escaped HTML) shows a floating tooltip on hover / focus. */
+    var tipEl = null;
+    function tipShow(t, x, y) {
+        if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'tip'; document.body.appendChild(tipEl); }
+        tipEl.innerHTML = t.getAttribute('data-tip');
+        tipEl.classList.add('on');
+        var w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+        var left = Math.min(window.innerWidth - w - 8, x + 14), top = y - h - 12;
+        if (top < 8) top = y + 16;
+        tipEl.style.left = Math.max(8, left) + 'px';
+        tipEl.style.top = top + 'px';
+    }
+    function tipHide() { if (tipEl) tipEl.classList.remove('on'); }
+    A.bindTips = function (root) {
+        root.addEventListener('pointermove', function (e) {
+            var t = e.target.closest && e.target.closest('[data-tip]');
+            if (t) tipShow(t, e.clientX, e.clientY); else tipHide();
+        });
+        root.addEventListener('pointerleave', tipHide, true);
+        root.addEventListener('focusin', function (e) {
+            var t = e.target.closest && e.target.closest('[data-tip]');
+            if (t) { var r = t.getBoundingClientRect(); tipShow(t, r.left + r.width / 2, r.top); }
+        });
+        root.addEventListener('focusout', tipHide);
+        window.addEventListener('scroll', tipHide, { passive: true });
+    };
+
     /* ------------------------------------------------------------ boot */
     function boot() {
         var page = document.body.getAttribute('data-page') || '';
@@ -501,9 +584,10 @@
         A.$$('[data-nav]').forEach(function (a) { a.classList.toggle('active', a.getAttribute('data-nav') === page); });
         var c = A.$('#crumbs');
         if (c) {
+            var section = document.body.getAttribute('data-section') || 'Pipeline';
             c.innerHTML = page === 'overview'
                 ? '<span>AEGIS</span><span class="sep">/</span><b>Pipeline overview</b>'
-                : '<span>AEGIS</span><span class="sep">/</span><span class="hide-sm">Pipeline</span><span class="sep hide-sm">/</span><b>' + A.esc(crumb) + '</b>';
+                : '<span>AEGIS</span><span class="sep">/</span><span class="hide-sm">' + A.esc(section) + '</span><span class="sep hide-sm">/</span><b>' + A.esc(crumb) + '</b>';
         }
 
         var mb = A.$('#menu-btn');
@@ -540,6 +624,9 @@
 
         A.sync();
         setInterval(function () { if (!paused) A.sync(); }, POLL_MS);
+        refreshInsightsBadge();
+        setInterval(function () { if (!paused) refreshInsightsBadge(); }, 30000);
+        A.bindTips(document);
         setInterval(renderLive, 1000);
     }
 

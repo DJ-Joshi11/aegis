@@ -122,6 +122,10 @@ flowchart LR
   C --> D[Evidence mapping +<br/>Exposure aggregation]
   B --> E[Dashboard]
   D --> E
+  B -. read-only .-> F[Insights engine<br/>analytics layer]
+  C -. read-only .-> F
+  R[Human review<br/>verdicts] --> F
+  F --> G[/insights page/]
 ```
 
 | Package | Owns | Depends on |
@@ -130,6 +134,36 @@ flowchart LR
 | `com.aegis.ingestion` | Mock decision generator, audit log, `DecisionEvent` publishing | `contracts` |
 | `com.aegis.detection` | Anomaly/bias flagging, jurisdiction disclosure-standard tagging | `contracts` |
 | `com.aegis.evidence` | Exposure evidence mapping, exposure aggregation, audit export, dashboard | `contracts` |
+| `com.aegis.insights` | Analytics layer: statistical inference engine, human review verdicts, `/insights` page | `contracts`, reads `ingestion` + `detection` |
+
+### Analytics layer — Inference & Insights (`/insights`)
+
+A separate, **read-only** layer beside the four-stage pipeline. Because AEGIS
+sees every decision every Qusar agent makes, it can infer patterns no single
+decision shows. Everything is classical, explainable statistics — no trained
+model, no LLM, no external API:
+
+| Analysis | Technique | Answers |
+|---|---|---|
+| Peer outlier | one-sided two-proportion z-test, Wilson 95% CI | Is this agent denying far more than agents doing the same job? |
+| Drift | z-test on the recent window + Population Stability Index | Did this agent's behaviour change (e.g. after a model update)? |
+| Fair treatment | four-fifths (80%) impact-ratio rule + z-test | Is a jurisdiction or line of business treated worse? |
+| Error rate | human UPHELD / OVERTURNED verdicts, Wilson CI | How often are this agent's adverse decisions reversed? |
+| Calibration | overturn rate by stated confidence | Does the agent's confidence predict correctness? |
+| Reasoning quality | rule checks | Could each decision be explained to a regulator? |
+| Portfolio | per line of business | Where is AI automation working, and where do reviewer cost and reversals concentrate? |
+
+Results roll into a transparent, weighted 0–100 agent risk score and a ranked
+list of plain-English findings. Humans record verdicts with
+`POST /api/reviews/{decisionId}`; the report is `GET /api/insights`.
+It is operational insight only: no pricing, premiums, coverage decisions,
+compliance certification or profit forecasts.
+
+The demo history is simulated: `MockDecisionGenerator` back-fills 320 seeded
+decisions with documented behaviour profiles (a drifting claims agent, an
+underwriting agent that treats IN-MH applicants worse, a fraud agent with
+concentrated workers' comp referrals), and `SimulatedReviewer` stands in for
+human reviewers. The data is synthetic; the analysis is real and unit-tested.
 
 Each package's own `README.md` has its full scope, files owned, and a
 ready-to-paste Claude kickoff prompt is in `docs/CLAUDE_PROMPTS.md`.
@@ -173,7 +207,8 @@ aegis/
     │   ├── contracts/           ← shared records (team-owned)
     │   ├── ingestion/            ← Person A
     │   ├── detection/            ← Person B
-    │   └── evidence/              ← Person C
+    │   ├── evidence/              ← Person C
+    │   └── insights/              ← analytics layer (inference engine + review loop)
     ├── main/resources/
     │   ├── templates/            ← layout.html (shared) + one folder per person
     │   └── static/css/

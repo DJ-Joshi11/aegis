@@ -41,7 +41,8 @@ class AnomalyDetectionServiceTest {
     }
 
     private DecisionEvent decision(String id, String agentId, String type, String outcome, String jurisdiction) {
-        return new DecisionEvent(id, agentId, type, outcome, Instant.now(), jurisdiction, "test reasoning trail");
+        return new DecisionEvent(id, agentId, type, outcome, Instant.now(), jurisdiction, "test reasoning trail",
+                null, null, null);
     }
 
     @Test

@@ -75,7 +75,10 @@ public class DecisionIngestionService {
                 trimOrNull(incoming.outcome()),
                 timestamp,
                 trimOrNull(incoming.jurisdiction()),
-                trimOrNull(incoming.reasoningTrail())
+                trimOrNull(incoming.reasoningTrail()),
+                upperOrNull(incoming.lineOfBusiness()),
+                incoming.amount(),
+                incoming.confidence()
         );
     }
 
@@ -85,6 +88,12 @@ public class DecisionIngestionService {
         requireNonBlank(event.outcome(), "outcome");
         requireNonBlank(event.jurisdiction(), "jurisdiction");
         requireNonBlank(event.reasoningTrail(), "reasoningTrail");
+        if (event.amount() != null && event.amount() < 0) {
+            throw new DecisionValidationException("amount must not be negative");
+        }
+        if (event.confidence() != null && (event.confidence() < 0 || event.confidence() > 1)) {
+            throw new DecisionValidationException("confidence must be between 0 and 1");
+        }
     }
 
     private void requireNonBlank(String value, String fieldName) {
@@ -101,6 +110,10 @@ public class DecisionIngestionService {
         return value == null ? null : value.trim();
     }
 
+    private static String upperOrNull(String value) {
+        return isBlank(value) ? null : value.trim().toUpperCase().replace(' ', '_');
+    }
+
     private static DecisionAudit toEntity(DecisionEvent event) {
         return new DecisionAudit(
                 event.decisionId(),
@@ -110,6 +123,9 @@ public class DecisionIngestionService {
                 event.timestamp(),
                 event.jurisdiction(),
                 event.reasoningTrail(),
+                event.lineOfBusiness(),
+                event.amount(),
+                event.confidence(),
                 Instant.now()
         );
     }
@@ -122,7 +138,10 @@ public class DecisionIngestionService {
                 audit.getOutcome(),
                 audit.getTimestamp(),
                 audit.getJurisdiction(),
-                audit.getReasoningTrail()
+                audit.getReasoningTrail(),
+                audit.getLineOfBusiness(),
+                audit.getAmount(),
+                audit.getConfidence()
         );
     }
 }

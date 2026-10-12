@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <th:block th:replace="~{layout :: headlinks}"></th:block>
+    <title>Inference &amp; Insights · AEGIS</title>
+    <style>
+        .layer-strip { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 12px 16px; }
+        .layer-strip .flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--dim); }
+        .layer-strip .flow .n { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text-2); }
+        .layer-strip .flow .n i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+        .layer-strip .flow .n.me { border-color: color-mix(in srgb, var(--s5) 55%, transparent); color: var(--text); background: color-mix(in srgb, var(--s5) 10%, var(--panel)); }
+        .layer-strip .flow svg { width: 12px; height: 12px; color: var(--faint); }
+        .layer-strip .ro { font-family: var(--mono); font-size: 10.5px; color: var(--dim); letter-spacing: .08em; white-space: nowrap; }
+        @media (max-width: 900px) { .layer-strip { grid-template-columns: 1fr; } }
+
+        .kpi .ci { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+        .kpi .val.sm { font-size: 22px; }
+
+        /* findings */
+        .finding { display: grid; grid-template-columns: 4px 1fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .15s; }
+        .finding:last-child { border-bottom: 0; }
+        .finding:hover { background: rgba(255, 255, 255, .02); }
+        .finding .bar-sev { border-radius: 4px; background: var(--c); opacity: .9; }
+        .finding .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .finding .top b { font-size: 13px; }
+        .finding p { margin: 4px 0 0; color: var(--text-2); font-size: 12.5px; }
+        .finding .ev { margin-top: 6px; font-family: var(--mono); font-size: 10.5px; color: var(--dim); }
+        .findings-wrap { max-height: 560px; overflow: auto; }
+
+        /* review queue */
+        .rq { padding: 12px 16px; border-bottom: 1px solid var(--line); }
+        .rq:last-child { border-bottom: 0; }
+        .rq .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .rq .why { color: var(--text-2); font-size: 12px; margin: 6px 0 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .rq .acts { display: flex; gap: 6px; align-items: center; }
+        .rq .acts .spacer { flex: 1; }
+        .btn.uphold:hover { border-color: rgba(52, 211, 153, .5); color: var(--ok); }
+        .btn.overturn:hover { border-color: rgba(248, 113, 113, .5); color: var(--bad); }
+        .rq.done { opacity: .45; pointer-events: none; }
+
+        /* agent table */
+        .risk-cell { display: flex; align-items: center; gap: 8px; min-width: 150px; }
+        .risk-cell .bar { flex: 1; height: 6px; }
+        .risk-cell b { font-family: var(--mono); font-size: 12.5px; width: 24px; text-align: right; }
+        .ci-bar { position: relative; height: 18px; min-width: 110px; }
+        .ci-bar .rail { position: absolute; left: 0; right: 0; top: 8px; height: 2px; background: #1d1f26; border-radius: 2px; }
+        .ci-bar .rng { position: absolute; top: 6px; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--c) 35%, transparent); }
+        .ci-bar .pt { position: absolute; top: 4px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--panel); }
+        .ci-bar .peer { position: absolute; top: 1px; bottom: 1px; width: 2px; margin-left: -1px; background: var(--text-2); opacity: .7; }
+        .delta { font-family: var(--mono); font-size: 11.5px; }
+
+        /* portfolio */
+        .lines { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 14px; }
+        @media (max-width: 720px) { .lines { grid-template-columns: 1fr; } }
+        .line { border: 1px solid var(--line-2); border-radius: 10px; padding: 12px; background: var(--panel-2); }
+        .line .h { display: flex; align-items: center; gap: 8px; }
+        .line .h b { font-size: 13px; }
+        .line .h { flex-wrap: wrap; }
+        .line .h .n { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--dim); white-space: nowrap; }
+        .line .m { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+        .line .m div { min-width: 0; }
+        .line .m span { display: block; font-size: 10.5px; color: var(--dim); }
+        .line .m b { font-family: var(--mono); font-size: 14px; font-weight: 600; }
+        .line .sig { display: flex; gap: 8px; font-size: 12px; color: var(--text-2); margin-top: 6px; line-height: 1.45; }
+        .line .sig svg { width: 14px; height: 14px; flex: none; margin-top: 2px; color: var(--c); }
+
+        /* disparity */
+        .disp-row { display: grid; grid-template-columns: minmax(0, 210px) 1fr 54px; gap: 12px; align-items: center; padding: 7px 16px; }
+        .disp-row .who { min-width: 0; font-size: 12px; }
+        .disp-row .who b { display: block; font-family: var(--mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .disp-row .who span { color: var(--dim); font-size: 11px; }
+        .disp-row .r { font-family: var(--mono); font-size: 12px; text-align: right; }
+        .disp-track { position: relative; height: 16px; }
+        .disp-track .rail { position: absolute; left: 0; right: 0; top: 7px; height: 2px; background: #1d1f26; }
+        .disp-track .line80 { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 1px dashed var(--text-2); opacity: .6; }
+        .disp-track .dot { position: absolute; top: 3px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--panel); }
+        .disp-track .stem { position: absolute; top: 7px; height: 2px; background: var(--c); opacity: .5; }
+        .disp-axis { display: grid; grid-template-columns: minmax(0, 210px) 1fr 54px; gap: 12px; padding: 4px 16px 12px; }
+        .disp-axis .ax { position: relative; height: 14px; font-family: var(--mono); font-size: 10px; color: var(--faint); }
+        .disp-axis .ax span { position: absolute; transform: translateX(-50%); }
+        @media (max-width: 640px) { .disp-row, .disp-axis { grid-template-columns: minmax(0, 120px) 1fr 44px; } }
+
+        /* reasoning */
+        .issue { display: grid; grid-template-columns: 200px 1fr 36px; gap: 10px; align-items: center; padding: 5px 0; font-size: 12px; }
+        .issue .n { font-family: var(--mono); text-align: right; color: var(--text-2); }
+        @media (max-width: 640px) { .issue { grid-template-columns: 1fr 70px 30px; } }
+        .ex { padding: 10px 0; border-top: 1px solid var(--line); }
+        .ex .q { font-size: 12px; color: var(--text-2); margin-top: 6px; font-style: italic; }
+
+        /* method */
+        .method { display: grid; grid-template-columns: 170px 1fr; gap: 0; }
+        .method .k { padding: 10px 16px; border-bottom: 1px solid #17181d; font-weight: 600; font-size: 12.5px; }
+        .method .k span { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--s5); font-weight: 500; margin-top: 2px; }
+        .method .v { padding: 10px 16px; border-bottom: 1px solid #17181d; font-size: 12.5px; color: var(--text-2); min-width: 0; }
+        .method .v code { color: #c4b5fd; font-size: 11.5px; }
+        @media (max-width: 640px) { .method { grid-template-columns: 1fr; } .method .k { border-bottom: 0; padding-bottom: 0; } }
+
+        .agent-pick { display: flex; gap: 6px; flex-wrap: wrap; }
+        .agent-pick button { border: 1px solid var(--line-2); background: var(--panel-2); color: var(--dim); border-radius: 7px; height: 26px; padding: 0 8px; font-size: 11px; font-family: var(--mono); cursor: pointer; }
+        .agent-pick button.on { color: var(--text); border-color: color-mix(in srgb, var(--s5) 60%, transparent); background: color-mix(in srgb, var(--s5) 12%, var(--panel)); }
+        .chart-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--dim); padding: 0 16px 12px; }
+        .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .chart-legend i { width: 14px; height: 2px; border-radius: 2px; background: var(--c); }
+        .chart-legend i.dash { background: none; border-top: 2px dashed var(--c); height: 0; }
+        .card { transition: opacity .2s; }
+        .loading .card { opacity: .8; }
+        @media (max-width: 1500px) { .hide-md { display: none; } }
+    </style>
+</head>
+<body data-page="insights" data-section="Analytics" data-crumb="Inference &amp; Insights">
+<div class="app">
+    <aside th:replace="~{layout :: sidebar}"></aside>
+    <div class="main">
+        <header th:replace="~{layout :: topbar}"></header>
+        <main class="content" id="content">
+
+            <div class="page-head">
+                <div>
+                    <div class="eyebrow"><span class="tag" style="color:var(--s5);border-color:rgba(129,140,248,.4)">Analytics layer</span> decisions + human verdicts → statistical inference</div>
+                    <h1 class="page-title"><span class="accent" style="--a:var(--s5)">Inference &amp; Insights</span></h1>
+                    <p class="page-sub">AEGIS watches every decision Qusar's agents make, so it can see what no single decision shows: an agent that changed behaviour, a region treated worse than others, confidence that doesn't predict correctness, and the lines of business where AI is helping — or costing — the carrier. Every number comes from a classical, explainable statistical test. No black-box model and no LLM.</p>
+                </div>
+                <div class="head-actions">
+                    <span class="endpoint"><span class="verb get">GET</span>/api/insights</span>
+                    <button class="btn" id="refresh">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Re-run analysis</button>
+                    <a class="btn primary" href="#method">How it works</a>
+                </div>
+            </div>
+
+            <div class="card layer-strip">
+                <span class="chip" style="--c:var(--s5)"><span class="d"></span>Read-only</span>
+                <div class="flow">
+                    <span class="n" style="--c:var(--qsr)"><i></i>Qusar decisions</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+                    <span class="n" style="--c:var(--s1)"><i></i>01–04 evidence pipeline</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+                    <span class="n" style="--c:var(--ok)"><i></i>Human review verdicts</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+                    <span class="n me" style="--c:var(--s5)"><i></i>Inference engine</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+                    <span class="n" style="--c:var(--text-2)"><i></i>Signals for a person</span>
+                </div>
+                <span class="ro" id="gen-at">—</span>
+            </div>
+
+            <div class="grid g-4 mt-14">
+                <div class="card kpi"><div class="label"><i style="background:var(--bad)"></i>Agents needing attention</div><div class="val" id="k-risk">—</div><div class="foot" id="k-risk-f">&nbsp;</div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--warn)"></i>Measured AI error rate</div><div class="val" id="k-err">—</div><div class="foot" id="k-err-f">&nbsp;</div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--s3)"></i>Claim value reversed on review</div><div class="val" id="k-val">—</div><div class="foot" id="k-val-f">&nbsp;</div></div>
+                <div class="card kpi"><div class="label"><i style="background:var(--s1)"></i>Human review workload</div><div class="val" id="k-hrs">—</div><div class="foot" id="k-hrs-f">&nbsp;</div></div>
+            </div>
+
+            <div class="grid g-wide mt-14">
+                <div class="card">
+                    <div class="card-h">
+                        <h3>What the engine found</h3><span class="sub" id="f-sub">ranked by severity · click to drill in</span>
+                        <div class="right">
+                            <div class="seg" id="f-seg"><button data-f="" class="on">All</button><button data-f="HIGH">High</button><button data-f="MEDIUM">Medium</button><button data-f="LOW">Opportunity</button></div>
+                        </div>
+                    </div>
+                    <div class="findings-wrap" id="findings"></div>
+                </div>
+                <div class="card">
+                    <div class="card-h">
+                        <h3>Human review queue</h3><span class="sub">adverse decisions awaiting a verdict</span>
+                        <div class="right"><span class="mini-pill" id="rq-count">0</span></div>
+                    </div>
+                    <div style="padding:12px 16px 0"><div class="callout" style="--c:var(--ok)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                        <div><b>You are the ground truth.</b> Uphold or overturn a decision and the error-rate, calibration and portfolio numbers update on the next run. AEGIS records your call — it never makes it.</div></div></div>
+                    <div class="findings-wrap" id="queue" style="max-height:470px"></div>
+                </div>
+            </div>
+
+            <div class="card mt-14">
+                <div class="card-h">
+                    <h3>Agent risk scorecard</h3><span class="sub">transparent weighted score · click an agent for the full breakdown</span>
+                    <div class="right hide-sm"><div class="legend"><span style="--c:var(--text-2)"><i style="width:2px;height:10px"></i>peer rate</span><span style="--c:var(--s5)"><i style="border-radius:50%"></i>agent rate · 95% CI</span></div></div>
+                </div>
+                <div class="table-wrap">
+                    <table class="t">
+                        <thead><tr><th>#</th><th>Qusar agent</th><th style="min-width:160px">Risk score</th><th class="hide-md">Job</th><th class="num">Decisions</th><th>Adverse rate vs peers</th><th>Drift</th><th>Overturned on review</th><th>Reasoning gaps</th></tr></thead>
+                        <tbody id="agents"></tbody>
+                    </table>
+                </div>
+                <div class="table-foot" id="weights"></div>
+            </div>
+
+            <div class="grid g-wide mt-14">
+                <div class="card">
+                    <div class="card-h">
+                        <h3>Behaviour over time</h3><span class="sub" id="tl-sub">adverse-outcome rate per time window</span>
+                    </div>
+                    <div style="padding:12px 16px 4px"><div class="agent-pick" id="tl-pick"></div></div>
+                    <div style="padding:6px 16px 4px" id="timeline"></div>
+                    <div class="chart-legend" id="tl-legend"></div>
+                </div>
+                <div class="card">
+                    <div class="card-h"><h3>Does confidence predict correctness?</h3><span class="sub">overturn rate by agent confidence</span></div>
+                    <div style="padding:14px 16px 6px" id="calib"></div>
+                    <div style="padding:0 16px 14px" id="calib-note"></div>
+                </div>
+            </div>
+
+            <div class="grid g-wide mt-14">
+                <div class="card">
+                    <div class="card-h">
+                        <h3>Portfolio by line of business</h3><span class="sub">where AI is helping, and where it's costing</span>
+                    </div>
+                    <div class="lines" id="lines"></div>
+                    <div style="padding:0 14px 14px"><div class="callout" style="--c:var(--s5)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>
+                        <div><b>Operational insight, not pricing.</b> These show where the carrier's AI automation is working and where reviewer cost, reversals or fraud referrals concentrate. They are not premiums, profitability forecasts or coverage advice.</div></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-h">
+                        <h3>Fair-treatment check</h3><span class="sub">four-fifths (80%) impact-ratio rule</span>
+                        <div class="right"><div class="seg" id="d-seg"><button data-d="agent" class="on">Per agent</button><button data-d="fleet">Fleet</button></div></div>
+                    </div>
+                    <div style="padding:12px 0 0" id="disp"></div>
+                    <div class="disp-axis"><span></span><div class="ax" id="disp-ax"></div><span></span></div>
+                    <div style="padding:0 16px 14px" class="muted" id="disp-note"></div>
+                </div>
+            </div>
+
+            <div class="grid g-2 mt-14">
+                <div class="card">
+                    <div class="card-h"><h3>Reasoning quality</h3><span class="sub">can each decision be explained to a regulator?</span></div>
+                    <div class="card-b" id="reasoning"></div>
+                </div>
+                <div class="card" id="method">
+                    <div class="card-h"><h3>How the inference works</h3><span class="sub">every test, in one place</span></div>
+                    <div class="method" id="method-body"></div>
+                </div>
+            </div>
+
+            <div class="callout mt-14" style="--c:var(--faint)" id="disclaimer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8.5-8 9.5C7.4 20.5 4 17 4 12V6z"/></svg>
+                <div id="disclaimer-text">—</div>
+            </div>
+
+        </main>
+    </div>
+</div>
+<th:block th:replace="~{layout :: overlays}"></th:block>
+<script src="/js/page-insights.js"></script>
+</body>
+</html>

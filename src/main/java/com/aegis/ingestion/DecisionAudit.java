@@ -46,6 +46,16 @@ public class DecisionAudit {
     @Column(nullable = false, length = 4000)
     private String reasoningTrail;
 
+    /** Optional insight fields — see {@code DecisionEvent}. */
+    @Column(length = 60)
+    private String lineOfBusiness;
+
+    @Column
+    private Double amount;
+
+    @Column
+    private Double confidence;
+
     /** When AEGIS itself received/ingested this decision — distinct from the agent's own decision timestamp. */
     @Column(nullable = false)
     private Instant ingestedAt;
@@ -55,7 +65,8 @@ public class DecisionAudit {
     }
 
     public DecisionAudit(String decisionId, String agentId, String decisionType, String outcome,
-                          Instant timestamp, String jurisdiction, String reasoningTrail, Instant ingestedAt) {
+                          Instant timestamp, String jurisdiction, String reasoningTrail,
+                          String lineOfBusiness, Double amount, Double confidence, Instant ingestedAt) {
         this.decisionId = decisionId;
         this.agentId = agentId;
         this.decisionType = decisionType;
@@ -63,6 +74,9 @@ public class DecisionAudit {
         this.timestamp = timestamp;
         this.jurisdiction = jurisdiction;
         this.reasoningTrail = reasoningTrail;
+        this.lineOfBusiness = lineOfBusiness;
+        this.amount = amount;
+        this.confidence = confidence;
         this.ingestedAt = ingestedAt;
     }
 
@@ -92,6 +106,18 @@ public class DecisionAudit {
 
     public String getReasoningTrail() {
         return reasoningTrail;
+    }
+
+    public String getLineOfBusiness() {
+        return lineOfBusiness;
+    }
+
+    public Double getAmount() {
+        return amount;
+    }
+
+    public Double getConfidence() {
+        return confidence;
     }
 
     public Instant getIngestedAt() {

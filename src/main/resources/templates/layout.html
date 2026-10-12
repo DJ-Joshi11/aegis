@@ -60,6 +60,12 @@
         </a>
     </div>
 
+    <div class="nav-section">Analytics</div>
+    <a class="nav-item" data-nav="insights" href="/insights">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M5 16l4-5 4 3 6-8"/><circle cx="19" cy="6" r="1.6"/></svg>
+        Inference &amp; Insights <span class="badge" id="nb-insights">—</span>
+    </a>
+
     <div class="nav-section">Outputs</div>
     <a class="nav-item" href="/api/evidence/export" target="_blank" rel="noopener">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
@@ -165,6 +171,20 @@
                     <div class="field">
                         <label for="in-jur">Jurisdiction</label>
                         <select id="in-jur"></select>
+                    </div>
+                </div>
+                <div class="row3">
+                    <div class="field">
+                        <label for="in-lob">Line of business</label>
+                        <select id="in-lob"></select>
+                    </div>
+                    <div class="field">
+                        <label for="in-amount" id="in-amount-l">Claim amount (USD)</label>
+                        <input id="in-amount" type="number" min="0" step="100"/>
+                    </div>
+                    <div class="field">
+                        <label for="in-conf">Agent confidence</label>
+                        <input id="in-conf" type="number" min="0" max="1" step="0.01"/>
                     </div>
                 </div>
                 <div class="field">

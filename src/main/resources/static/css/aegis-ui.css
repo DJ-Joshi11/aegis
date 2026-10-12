@@ -414,6 +414,8 @@ pre.json .b { color: #f9a8d4; }
 .field textarea { min-height: 72px; resize: vertical; line-height: 1.5; }
 .field select:focus, .field textarea:focus { outline: none; border-color: #4b4f5c; box-shadow: 0 0 0 3px rgba(168, 85, 247, .15); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 10px; }
+@media (max-width: 520px) { .row3 { grid-template-columns: 1fr; } }
 .presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
 .preset {
     text-align: left; padding: 10px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--panel-2); cursor: pointer;
@@ -490,4 +492,29 @@ input[type=range]::-moz-range-thumb { width: 12px; height: 12px; border-radius: 
     #live-text { display: none; }
     .page-title { font-size: 22px; }
     .table-wrap { max-height: none; }
+}
+
+/* ---------------------------------------------------------------- analytics */
+:root { --s5: #818cf8; }   /* Analytics layer (beside the pipeline) */
+.nav-item .badge.hot:not(:empty) { color: #fca5a5; border-color: rgba(248, 113, 113, .35); background: rgba(248, 113, 113, .08); }
+
+/* shared chart tooltip */
+.tip {
+    position: fixed; z-index: 70; pointer-events: none; opacity: 0; transition: opacity .12s;
+    background: #0d0e12; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px;
+    box-shadow: var(--shadow); font-size: 11.5px; color: var(--text-2); max-width: 280px;
+}
+.tip.on { opacity: 1; }
+.tip b { color: var(--text); font-family: var(--mono); font-weight: 600; font-size: 12.5px; }
+.tip .row { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.tip .key { width: 12px; height: 2px; border-radius: 2px; background: var(--c); flex: none; }
+.tip .t { color: var(--dim); font-size: 10.5px; font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 3px; }
+.chart { display: block; width: 100%; overflow: visible; }
+.chart .grid line { stroke: #1d1f26; stroke-width: 1; }
+.chart .axis text, .chart text.axis { fill: var(--faint); font-family: var(--mono); font-size: 10px; }
+.chart .hit { fill: transparent; cursor: crosshair; }
+.chart [data-tip] { cursor: pointer; }
+@media (max-width: 720px) {
+    .card-h { flex-wrap: wrap; }
+    .card-h .right { margin-left: 0; flex-wrap: wrap; }
 }
